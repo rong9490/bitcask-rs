@@ -1,6 +1,6 @@
 // 自定义的错误类型
 
-use std::{result};
+use std::result;
 use thiserror::Error as ThisError;
 
 // 自定义错误, 库协助: thiserror
@@ -14,6 +14,8 @@ pub enum BKErrors {
     FailedSyncToDataFile,
     #[error("failed open data file")]
     FailedOpenDataFile,
+    #[error("key is empty")]
+    KeyIsEmpty,
 }
 
 // 自定义类型
