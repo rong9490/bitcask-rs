@@ -12,6 +12,8 @@ pub enum BKErrors {
     FailedWriteToDataFile,
     #[error("failed sync data file")]
     FailedSyncToDataFile,
+    #[error("failed open data file")]
+    FailedOpenDataFile,
 }
 
 // 自定义类型
