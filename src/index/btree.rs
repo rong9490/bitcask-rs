@@ -7,15 +7,17 @@ use std::{collections::BTreeMap, sync::Arc};
 
 #[allow(dead_code)]
 pub struct BTree {
-    // 注意这里的key, val含义
-    tree: Arc<RwLock<BTreeMap<Vec<u8>, LogRecordPos>>>, // 并发访问锁, parking_lot库提供
+    // 注意这里的 key, value 语义
+    // Atomic reference count
+    tree: Arc<RwLock<BTreeMap<Vec<u8>, LogRecordPos>>>, // 并发访问锁, parking_lot库 提供
 }
 
 impl BTree {
-    // 创建一个新的BTree实例
+    // 初始化实例
     pub fn new() -> Self {
+        let org_tree = BTreeMap::new();
         Self {
-            tree: Arc::new(RwLock::new(BTreeMap::new())),
+            tree: Arc::new(RwLock::new(org_tree)),
         }
     }
 }
@@ -23,19 +25,28 @@ impl BTree {
 // 为BTree实现Indexer接口: Struct + Trait
 impl Indexer for BTree {
     fn put(&self, key: Vec<u8>, pos: LogRecordPos) -> bool {
-        let mut write_guard = self.tree.write(); // 拿到写锁
+        // 拿到写锁
+        let mut write_guard = self.tree.write();
+        // btree的插入方法
         write_guard.insert(key, pos);
         true
     }
 
-    fn get(&self, key: Vec<u8>) -> Option<LogRecordPos /* 需要实现Copy trait */> {
-        let read_guard = self.tree.read(); // 拿到读锁
-        read_guard.get(&key).copied() // 拿到key对应的值, 为什么需要copied --> 引用变为拥有所有权(传递出去)
+    fn get(&self, key: Vec<u8>) -> Option<LogRecordPos> {
+        // 拿到读锁
+        let read_guard = self.tree.read();
+        let record_ref: Option<&LogRecordPos> = read_guard.get(&key);
+        // 为什么需要copied --> 引用变为拥有所有权(传递出去)
+
+        // 需要实现Copy trait
+        record_ref.copied()
     }
 
     fn delete(&self, key: Vec<u8>) -> bool {
-        let mut write_guard = self.tree.write(); // 拿到写锁
-        let remove_result = write_guard.remove(&key);
+        // 拿到写锁
+        let mut write_guard = self.tree.write();
+        let remove_result: Option<LogRecordPos> = write_guard.remove(&key);
+        // 如果不存在就是false
         remove_result.is_some()
     }
 }
@@ -47,25 +58,25 @@ mod tests {
     #[test]
     fn test_btree() {
         let bt = BTree::new();
+        let org_record = LogRecordPos { file_id: 1, offset: 120 };
+        let _key1: Vec<u8> = b"key11234".to_vec();
+        // 插入一个记录
         bt.put(
-            b"key1".to_vec(),
-            LogRecordPos {
-                file_id: 1,
-                offset: 100,
-            },
+            b"key1".to_vec(), // key 是将&str转为Vec<u8>
+            org_record,
         );
-        let pos = bt.get(b"key1".to_vec()).unwrap();
-        assert_eq!(pos.file_id, 1);
-        assert_eq!(pos.offset, 100);
+        // 获取记录
+        let pos: LogRecordPos = bt.get(b"key1".to_vec()).unwrap();
+        assert_eq!(pos.file_id, org_record.file_id);
+        assert_eq!(pos.offset, org_record.offset);
 
-        // 测试获取不存在的键
+        // 获取不存在的键
         assert!(bt.get(b"non_existent_key".to_vec()).is_none());
-
-        // 测试删除存在的键
+        // 删除存在的键
         assert!(bt.delete(b"key1".to_vec()));
+        // 获取不存在的键
         assert!(bt.get(b"key1".to_vec()).is_none());
-
-        // 测试删除不存在的键
+        // 删除不存在的键
         assert!(!bt.delete(b"non_existent_key".to_vec()));
 
         // 测试删除后再次插入
