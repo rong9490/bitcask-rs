@@ -16,6 +16,12 @@ pub enum BKErrors {
     FailedOpenDataFile,
     #[error("key is empty")]
     KeyIsEmpty,
+    #[error("failed update memory index")]
+    FailedUpdateIndex,
+    #[error("key not found")]
+    KeyNotFound,
+    #[error("data file not found")]
+    DataFileNotFound,
 }
 
 // 自定义类型

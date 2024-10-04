@@ -1,13 +1,14 @@
 // 当前活跃的数据文件
 
-use std::{path::PathBuf, sync::Arc};
-
 use parking_lot::RwLock;
+use std::{path::PathBuf, sync::Arc};
 
 use crate::{
     errors::{BKErrors, BKResult},
     fio::IOManager,
 };
+
+use super::log_record::LogRecord;
 
 pub struct DataFile {
     file_id: Arc<RwLock<u32>>,      // 数据文件id
@@ -31,8 +32,12 @@ impl DataFile {
         *self.file_id.read()
     }
 
+    pub fn read_log_record(&self, offset: u64) -> BKResult<LogRecord> {
+        todo!()
+    }
+
     // 写入数据
-    pub fn write(&self, buf: &[u8]) -> BKResult<()> {
+    pub fn write(&self, buf: &[u8]) -> BKResult<usize> {
         todo!()
     }
 

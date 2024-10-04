@@ -58,7 +58,10 @@ mod tests {
     #[test]
     fn test_btree() {
         let bt = BTree::new();
-        let org_record = LogRecordPos { file_id: 1, offset: 120 };
+        let org_record = LogRecordPos {
+            file_id: 1,
+            offset: 120,
+        };
         let _key1: Vec<u8> = b"key11234".to_vec();
         // 插入一个记录
         bt.put(
