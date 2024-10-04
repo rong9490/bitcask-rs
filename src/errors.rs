@@ -1,40 +1,53 @@
-// 自定义的错误类型
-
 use std::result;
-use thiserror::Error as ThisError;
 
-// 自定义错误, 库协助: thiserror
-#[derive(Debug, ThisError, PartialEq)]
-pub enum BKErrors {
-    #[error("failed read from ")]
+use thiserror::Error;
+
+#[derive(Error, Debug, PartialEq)]
+pub enum Errors {
+    #[error("failed to read from data file")]
     FailedReadFromDataFile,
-    #[error("failed write to data file")]
+
+    #[error("failed to write to data file")]
     FailedWriteToDataFile,
-    #[error("failed sync data file")]
-    FailedSyncToDataFile,
-    #[error("failed open data file")]
-    FailedOpenDataFile,
-    #[error("key is empty")]
+
+    #[error("failed to sync data file")]
+    FailedSyncDataFile,
+
+    #[error("failed to open data file")]
+    FailedToOpenDataFile,
+
+    #[error("the key is empty")]
     KeyIsEmpty,
-    #[error("failed update memory index")]
-    FailedUpdateIndex,
-    #[error("key not found")]
+
+    #[error("memory index failed to update")]
+    IndexUpdateFailed,
+
+    #[error("key is not found in database")]
     KeyNotFound,
-    #[error("data file not found")]
+
+    #[error("data file is not found in database")]
     DataFileNotFound,
-    #[error("dir path is empty")]
+
+    #[error("database dir path can not be empty")]
     DirPathIsEmpty,
-    #[error("invalid data file size")]
-    InvalidDataFileSize,
-    #[error("failed to create dir")]
-    FailedToCreateDir,
-    #[error("failed to read data file")]
-    FailedReadDataFile,
-    #[error("data directory corrupted")]
+
+    #[error("database data file size must be greater than 0")]
+    DataFileSizeTooSmall,
+
+    #[error("failed to create the database directory")]
+    FailedToCreateDatabaseDir,
+
+    #[error("failed to read the database directory")]
+    FailedToReadDatabaseDir,
+
+    #[error("the database directory maybe corrupted")]
     DataDirectoryCorrupted,
-    #[error("read data file EOF")]
+
+    #[error("read data file eof")]
     ReadDataFileEOF,
+
+    #[error("invalid crc value, log record maybe corrupted")]
+    InvalidLogRecordCrc,
 }
 
-// 自定义类型
-pub type BKResult<T> = result::Result<T, BKErrors>;
+pub type Result<T> = result::Result<T, Errors>;
