@@ -22,6 +22,16 @@ pub enum BKErrors {
     KeyNotFound,
     #[error("data file not found")]
     DataFileNotFound,
+    #[error("dir path is empty")]
+    DirPathIsEmpty,
+    #[error("invalid data file size")]
+    InvalidDataFileSize,
+    #[error("failed to create dir")]
+    FailedToCreateDir,
+    #[error("failed to read data file")]
+    FailedReadDataFile,
+    #[error("data directory corrupted")]
+    DataDirectoryCorrupted,
 }
 
 // 自定义类型

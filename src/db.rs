@@ -1,15 +1,16 @@
 // 存储引擎
 // 第三方包, 字节数组Bytes
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::{collections::HashMap, fs};
 
-use crate::data::data_file::DataFile;
+use crate::data::data_file::{DataFile, DATA_FILE_SUFFIX};
 use crate::data::log_record::LogRecordPos;
 use crate::index;
 use crate::options::Options;
 use bytes::Bytes;
+use log::warn;
 use parking_lot::RwLock;
 
 use crate::{
@@ -25,6 +26,34 @@ pub struct Engine {
 }
 
 impl Engine {
+    // 启动, 打开引擎实例
+    pub fn open(options: Options) -> BKResult<Engine> {
+        // 用户配置的有效性校验
+        if let Some(err) = check_options(&options) {
+            return Err(err);
+        }
+
+        // 理解为什么需要clone
+        let options = options.clone();
+
+        // 目录是否存在, 不存在则创建
+        let dir_path = options.dir_path.clone();
+
+        // 目录不存在, 创建目录
+        if !dir_path.is_dir() {
+            if let Err(err) = std::fs::create_dir_all(&dir_path) {
+                warn!(
+                    "failed to create dir: {}, err: {}",
+                    dir_path.to_string_lossy(),
+                    err
+                );
+                return Err(BKErrors::FailedToCreateDir);
+            }
+        }
+
+        todo!()
+    }
+
     pub fn put(&self, key: Bytes, value: Bytes) -> BKResult<()> {
         if key.is_empty() {
             return Err(BKErrors::KeyIsEmpty); // key不能为空
@@ -135,4 +164,84 @@ impl Engine {
 
         Ok(index_record)
     }
+}
+
+// 从目录中加载数据文件
+fn load_data_files(dir_path: PathBuf) -> BKResult<Vec<DataFile>> {
+    let dir = fs::read_dir(dir_path.clone());
+    if dir.is_err() {
+        return Err(BKErrors::FailedReadDataFile);
+    }
+
+    let dir = dir.unwrap();
+
+    // 存放id
+    let mut file_ids: Vec<u32> = Vec::new();
+    // 存放文件
+    let mut data_files: Vec<DataFile> = Vec::new();
+
+    // 遍历目录
+    for file in dir {
+        if let Ok(entry) = file {
+            // 从文件拿到文件名
+            let file_os_str = entry.file_name();
+            let file_name: &str = file_os_str.to_str().unwrap();
+
+            // 判断后缀.data
+            if file_name.ends_with(DATA_FILE_SUFFIX) {
+                // 解析拿到数字id
+                let split_names: Vec<&str> = file_name.split(".").collect::<Vec<&str>>();
+                let file_id: u32 = match split_names[0].parse::<u32>() {
+                    Ok(id) => id,
+                    Err(err) => {
+                        warn!("parse file id failed, err: {}", err);
+                        return Err(BKErrors::DataDirectoryCorrupted);
+                    }
+                };
+                // 找到了文件id
+                file_ids.push(file_id);
+            }
+        }
+    }
+
+    // 如果没有数据文件，则直接返回
+    if file_ids.is_empty() {
+        return Ok(data_files);
+    }
+
+    // 对文件 id 进行排序，从小到大进行加载
+    file_ids.sort();
+    // 遍历所有的文件id，依次打开对应的数据文件
+    for file_id in file_ids.iter() {
+        let data_file = DataFile::new(dir_path.clone(), *file_id)?;
+        data_files.push(data_file);
+    }
+
+    Ok(data_files)
+}
+
+// 独立的验证方法
+fn check_options(options: &Options) -> Option<BKErrors> {
+    // let options = options.clone();
+    // 解构 Options 结构体
+    let Options {
+        dir_path,
+        data_file_size,
+        sync_writes,
+        // index_type,
+    } = options;
+
+    let dir_path = dir_path.to_str();
+
+    // 非法路径
+    if dir_path.is_none() || dir_path.unwrap().is_empty() {
+        return Some(BKErrors::DirPathIsEmpty);
+    }
+
+    // 文件大小非法
+    if *data_file_size <= 0 {
+        return Some(BKErrors::InvalidDataFileSize);
+    }
+
+    None
 }

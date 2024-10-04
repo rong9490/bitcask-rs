@@ -10,6 +10,8 @@ use crate::{
 
 use super::log_record::LogRecord;
 
+pub const DATA_FILE_SUFFIX: &str = ".data";
+
 pub struct DataFile {
     file_id: Arc<RwLock<u32>>,      // 数据文件id
     write_off: Arc<RwLock<u64>>,    // 当前偏移量
