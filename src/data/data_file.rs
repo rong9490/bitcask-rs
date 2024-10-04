@@ -8,7 +8,7 @@ use crate::{
     fio::IOManager,
 };
 
-use super::log_record::LogRecord;
+use super::log_record::{LogRecord, ReadLogRecord};
 
 pub const DATA_FILE_SUFFIX: &str = ".data";
 
@@ -29,12 +29,17 @@ impl DataFile {
         *self.write_off.read()
     }
 
+    pub fn set_write_off(&self, offset: u64) {
+        let mut write_guard = self.write_off.write();
+        *write_guard = offset;
+    }
+
     // 获取数据文件id
     pub fn get_file_id(&self) -> u32 {
         *self.file_id.read()
     }
 
-    pub fn read_log_record(&self, offset: u64) -> BKResult<LogRecord> {
+    pub fn read_log_record(&self, offset: u64) -> BKResult<ReadLogRecord> {
         todo!()
     }
 

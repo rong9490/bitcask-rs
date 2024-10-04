@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Options {
     // 数据库存放目录
     pub dir_path: PathBuf,
@@ -9,4 +9,16 @@ pub struct Options {
 
     // 是否在每次写入后sync
     pub sync_writes: bool,
+
+    // 索引类型
+    pub index_type: IndexType,
+}
+
+#[derive(Clone)]
+pub enum IndexType {
+    /// BTree 索引
+    BTree,
+
+    /// 跳表索引
+    SkipList,
 }

@@ -18,11 +18,14 @@ use crate::{
     errors::{BKErrors, BKResult},
 };
 
+const INITIAL_FILE_ID: u32 = 0;
+
 pub struct Engine {
-    options: Options,
+    options: Arc<Options>,
     active_file: Arc<RwLock<DataFile>>, // 关联当前活跃的文件
     older_files: Arc<RwLock<HashMap<u32, DataFile>>>, // 旧的文件树
     index: Box<dyn index::Indexer>,     // 内存索引
+    file_ids: Vec<u32>, // 数据库启动时的文件 id，只用于加载索引时使用，不能在其他的地方更新或使用
 }
 
 impl Engine {
@@ -51,7 +54,45 @@ impl Engine {
             }
         }
 
-        todo!()
+        // 加载数据文件
+        let mut data_files: Vec<DataFile> = load_data_files(dir_path.clone())?;
+
+        // 设置file id信息
+        let mut file_ids: Vec<u32> = Vec::new();
+        for data_file in data_files.iter() {
+            file_ids.push(data_file.get_file_id());
+        }
+
+        // 将旧文件存入older_files中
+        let mut older_files: HashMap<u32, DataFile> = HashMap::new();
+        // 这里为什么判断长度, 为什么长度减2 ?
+        // 因为旧文件是活跃文件的前一个文件, 所以长度减2
+        if data_files.len() > 1 {
+            for _ in 0..=data_files.len() - 2 {
+                let file = data_files.pop().unwrap();
+                older_files.insert(file.get_file_id(), file);
+            }
+        }
+
+        // 拿到当前活跃文件，即列表中最后一个文件
+        let active_file = match data_files.pop() {
+            Some(v) => v,
+            None => DataFile::new(dir_path.clone(), INITIAL_FILE_ID)?,
+        };
+
+        // 构造存储引擎实例
+        let engine = Self {
+            options: Arc::new(options.clone()),
+            active_file: Arc::new(RwLock::new(active_file)),
+            older_files: Arc::new(RwLock::new(older_files)),
+            index: Box::new(index::new_indexer(options.index_type)),
+            file_ids,
+        };
+
+        // 从数据文件中加载索引
+        engine.load_index_from_data_files()?;
+
+        Ok(engine)
     }
 
     pub fn put(&self, key: Bytes, value: Bytes) -> BKResult<()> {
@@ -63,7 +104,7 @@ impl Engine {
         let mut record: LogRecord = LogRecord {
             key: key.to_vec(),
             value: value.to_vec(),
-            record_type: LogRecordType::NORMAL,
+            rec_type: LogRecordType::NORMAL,
         };
 
         // 追加到活跃文件中
@@ -96,8 +137,8 @@ impl Engine {
         let older_files = self.older_files.read();
 
         // 匹配id, 拿到log_record信息
-        let log_record = match position.file_id == active_file.get_file_id() {
-            true => active_file.read_log_record(position.offset)?,
+        let log_record: LogRecord = match position.file_id == active_file.get_file_id() {
+            true => active_file.read_log_record(position.offset)?.record,
             false => {
                 // 从旧的集合里找到文件
                 let data_file = older_files.get(&position.file_id);
@@ -106,12 +147,12 @@ impl Engine {
                     return Err(BKErrors::DataFileNotFound);
                 }
                 let data_file = data_file.unwrap();
-                data_file.read_log_record(position.offset)?
+                data_file.read_log_record(position.offset)?.record
             }
         };
 
         // 判断类型: 被标记删除(不能访问)
-        if log_record.record_type == LogRecordType::DELETE {
+        if log_record.rec_type == LogRecordType::DELETED {
             return Err(BKErrors::KeyNotFound);
         }
 
@@ -163,6 +204,64 @@ impl Engine {
         };
 
         Ok(index_record)
+    }
+
+    /// 从数据文件中加载内存索引
+    /// 遍历数据文件中的内容，并依次处理其中的记录
+    fn load_index_from_data_files(&self) -> BKResult<()> {
+        // 数据文件为空，直接返回
+        if self.file_ids.is_empty() {
+            return Ok(());
+        }
+
+        let active_file = self.active_file.read();
+        let older_files = self.older_files.read();
+
+        // 遍历每个文件 id，取出对应的数据文件，并加载其中的数据
+        for (i, file_id) in self.file_ids.iter().enumerate() {
+            let mut offset = 0;
+            loop {
+                let log_record_res = match *file_id == active_file.get_file_id() {
+                    true => active_file.read_log_record(offset),
+                    false => {
+                        let data_file = older_files.get(file_id).unwrap();
+                        data_file.read_log_record(offset)
+                    }
+                };
+
+                let (log_record, size) = match log_record_res {
+                    Ok(result) => (result.record, result.size),
+                    Err(e) => {
+                        if e == BKErrors::ReadDataFileEOF {
+                            break;
+                        }
+                        return Err(e);
+                    }
+                };
+
+                // 构建内存索引
+                let log_record_pos = LogRecordPos {
+                    file_id: *file_id,
+                    offset,
+                };
+
+                match log_record.rec_type {
+                    LogRecordType::NORMAL => {
+                        self.index.put(log_record.key.to_vec(), log_record_pos)
+                    }
+                    LogRecordType::DELETED => self.index.delete(log_record.key.to_vec()),
+                };
+
+                // 递增 offset，下一次读取的时候从新的位置开始
+                offset += size;
+            }
+
+            // 设置活跃文件的 offset
+            if i == self.file_ids.len() - 1 {
+                active_file.set_write_off(offset);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -227,8 +326,8 @@ fn check_options(options: &Options) -> Option<BKErrors> {
     let Options {
         dir_path,
         data_file_size,
-        sync_writes,
-        // index_type,
+        sync_writes: _,
+        index_type: _,
     } = options;
 
     let dir_path = dir_path.to_str();

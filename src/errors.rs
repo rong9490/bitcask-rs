@@ -4,7 +4,7 @@ use std::result;
 use thiserror::Error as ThisError;
 
 // 自定义错误, 库协助: thiserror
-#[derive(Debug, ThisError)]
+#[derive(Debug, ThisError, PartialEq)]
 pub enum BKErrors {
     #[error("failed read from ")]
     FailedReadFromDataFile,
@@ -32,6 +32,8 @@ pub enum BKErrors {
     FailedReadDataFile,
     #[error("data directory corrupted")]
     DataDirectoryCorrupted,
+    #[error("read data file EOF")]
+    ReadDataFileEOF,
 }
 
 // 自定义类型
