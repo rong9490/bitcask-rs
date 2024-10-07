@@ -1,0 +1,12 @@
+[package]
+name = "redis"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bitcask-rs = { path = "../../bitcask-rs"}
+bytes = "1.4.0"
+prost = "0.11.8"
+redcon = "0.1.2"

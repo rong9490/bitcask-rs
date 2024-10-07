@@ -11,6 +11,7 @@ use crate::{
     data::log_record::{LogRecord, LogRecordType},
     db::Engine,
     errors::{Errors, Result},
+    options::IndexType::BPlusTree,
     options::WriteBatchOptions,
 };
 
@@ -27,6 +28,9 @@ pub struct WriteBatch<'a> {
 impl Engine {
     /// 初始化 WriteBatch
     pub fn new_write_batch(&self, options: WriteBatchOptions) -> Result<WriteBatch> {
+        if self.options.index_type == BPlusTree && !self.seq_file_exists && !self.is_initial {
+            return Err(Errors::UnableToUseWriteBatch);
+        }
         Ok(WriteBatch {
             pending_writes: Arc::new(Mutex::new(HashMap::new())),
             engine: self,
@@ -126,10 +130,18 @@ impl WriteBatch<'_> {
         for (_, item) in pending_writes.iter() {
             if item.rec_type == LogRecordType::NORMAL {
                 let record_pos = positions.get(&item.key).unwrap();
-                self.engine.index.put(item.key.clone(), *record_pos);
+                if let Some(old_pos) = self.engine.index.put(item.key.clone(), *record_pos) {
+                    self.engine
+                        .reclaim_size
+                        .fetch_add(old_pos.size as usize, Ordering::SeqCst);
+                }
             }
             if item.rec_type == LogRecordType::DELETED {
-                self.engine.index.delete(item.key.clone());
+                if let Some(old_pos) = self.engine.index.delete(item.key.clone()) {
+                    self.engine
+                        .reclaim_size
+                        .fetch_add(old_pos.size as usize, Ordering::SeqCst);
+                }
             }
         }
 
@@ -238,6 +250,8 @@ mod tests {
 
         // 重启之后进行校验
         engine.close().expect("failed to close");
+        std::mem::drop(engine);
+
         let engine2 = Engine::open(opts.clone()).expect("failed to open engine");
         let keys = engine2.list_keys();
         assert_eq!(2, keys.ok().unwrap().len());

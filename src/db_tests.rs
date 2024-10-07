@@ -9,9 +9,7 @@ use crate::{
 };
 
 #[test]
-#[ignore]
 fn test_engine_put() {
-    
     let mut opts = Options::default();
     opts.dir_path = PathBuf::from("/tmp/bitcask-rs-put");
     opts.data_file_size = 64 * 1024 * 1024;
@@ -50,7 +48,8 @@ fn test_engine_put() {
     }
 
     // 6.重启后再 Put 数据
-    // 先关闭原数据库 todo
+    std::mem::drop(engine);
+
     let engine2 = Engine::open(opts.clone()).expect("failed to open engine");
     let res9 = engine2.put(get_test_key(55), get_test_value(55));
     assert!(res9.is_ok());
@@ -63,7 +62,6 @@ fn test_engine_put() {
 }
 
 #[test]
-#[ignore]
 fn test_engine_get() {
     let mut opts = Options::default();
     opts.dir_path = PathBuf::from("/tmp/bitcask-rs-get");
@@ -106,7 +104,8 @@ fn test_engine_get() {
     assert_eq!(get_test_value(505), res10.unwrap());
 
     // 6.重启后，前面写入的数据都能拿到
-    // 先关闭原数据库 todo
+    std::mem::drop(engine);
+
     let engine2 = Engine::open(opts.clone()).expect("failed to open engine");
     let res11 = engine2.get(get_test_key(111));
     assert_eq!(get_test_value(111), res11.unwrap());
@@ -153,11 +152,12 @@ fn test_engine_delete() {
     assert_eq!(Bytes::from("a new value"), res9.unwrap());
 
     // 5.重启后再 Put 数据
-    // 先关闭原数据库 todo
+    std::mem::drop(engine);
+
     let engine2 = Engine::open(opts.clone()).expect("failed to open engine");
     let res10 = engine2.get(get_test_key(111));
     assert_eq!(Errors::KeyNotFound, res10.err().unwrap());
-    let res11 = engine.get(get_test_key(222));
+    let res11 = engine2.get(get_test_key(222));
     assert_eq!(Bytes::from("a new value"), res11.unwrap());
 
     // 删除测试的文件夹
@@ -196,4 +196,74 @@ fn test_engine_sync() {
 
     // 删除测试的文件夹
     std::fs::remove_dir_all(opts.clone().dir_path).expect("failed to remove path");
+}
+
+#[test]
+fn test_engine_filelock() {
+    let mut opts = Options::default();
+    opts.dir_path = PathBuf::from("/tmp/bitcask-rs-flock");
+    let engine = Engine::open(opts.clone()).expect("failed to open engine");
+
+    let res1 = Engine::open(opts.clone());
+    assert_eq!(res1.err().unwrap(), Errors::DatabaseIsUsing);
+
+    let res2 = engine.close();
+    assert!(res2.is_ok());
+
+    let res3 = Engine::open(opts.clone());
+    assert!(res3.is_ok());
+
+    // 删除测试的文件夹
+    std::fs::remove_dir_all(opts.clone().dir_path).expect("failed to remove path");
+}
+
+#[test]
+fn test_engine_stat() {
+    let mut opts = Options::default();
+    opts.dir_path = PathBuf::from("/tmp/bitcask-rs-stat");
+    let engine = Engine::open(opts.clone()).expect("failed to open engine");
+
+    for i in 0..=10000 {
+        let res = engine.put(get_test_key(i), get_test_value(i));
+        assert!(res.is_ok());
+    }
+    for i in 0..=1000 {
+        let res = engine.put(get_test_key(i), get_test_value(i));
+        assert!(res.is_ok());
+    }
+    for i in 2000..=5000 {
+        let res = engine.delete(get_test_key(i));
+        assert!(res.is_ok());
+    }
+
+    let stat = engine.stat().unwrap();
+    assert!(stat.reclaim_size > 0);
+
+    // 删除测试的文件夹
+    std::fs::remove_dir_all(opts.clone().dir_path).expect("failed to remove path");
+}
+
+#[test]
+fn test_engine_backup() {
+    let mut opts = Options::default();
+    opts.dir_path = PathBuf::from("/tmp/bitcask-rs-backup");
+    let engine = Engine::open(opts.clone()).expect("failed to open engine");
+
+    for i in 0..=10000 {
+        let res = engine.put(get_test_key(i), get_test_value(i));
+        assert!(res.is_ok());
+    }
+
+    let backup_dir = PathBuf::from("/tmp/bitcask-rs-backup-test");
+    let bak_res = engine.backup(backup_dir.clone());
+    assert!(bak_res.is_ok());
+
+    let mut opts1 = Options::default();
+    opts1.dir_path = backup_dir.clone();
+    let eng2 = Engine::open(opts1);
+    assert!(eng2.is_ok());
+
+    // 删除测试的文件夹
+    std::fs::remove_dir_all(opts.clone().dir_path).expect("failed to remove path");
+    std::fs::remove_dir_all(backup_dir).expect("failed to remove path");
 }
