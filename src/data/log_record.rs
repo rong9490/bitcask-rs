@@ -8,6 +8,9 @@ pub enum LogRecordType {
 
     // 被删除的数据标识，墓碑值
     DELETED = 2,
+
+    // 事务完成的标识
+    TXNFINISHED = 3,
 }
 
 /// LogRecord 写入到数据文件的记录
@@ -31,6 +34,12 @@ pub struct LogRecordPos {
 pub struct ReadLogRecord {
     pub(crate) record: LogRecord,
     pub(crate) size: usize,
+}
+
+// 暂存事务数据信息
+pub struct TransactionRecord {
+    pub(crate) record: LogRecord,
+    pub(crate) pos: LogRecordPos,
 }
 
 impl LogRecord {
@@ -91,6 +100,7 @@ impl LogRecordType {
         match v {
             1 => LogRecordType::NORMAL,
             2 => LogRecordType::DELETED,
+            3 => LogRecordType::TXNFINISHED,
             _ => panic!("unknown log record type"),
         }
     }

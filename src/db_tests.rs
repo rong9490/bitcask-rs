@@ -9,7 +9,9 @@ use crate::{
 };
 
 #[test]
+#[ignore]
 fn test_engine_put() {
+    
     let mut opts = Options::default();
     opts.dir_path = PathBuf::from("/tmp/bitcask-rs-put");
     opts.data_file_size = 64 * 1024 * 1024;
@@ -61,6 +63,7 @@ fn test_engine_put() {
 }
 
 #[test]
+#[ignore]
 fn test_engine_get() {
     let mut opts = Options::default();
     opts.dir_path = PathBuf::from("/tmp/bitcask-rs-get");

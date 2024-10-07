@@ -1,13 +1,22 @@
-use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    fs,
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+};
 
 use bytes::Bytes;
 use log::warn;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 
 use crate::{
+    batch::{log_record_key_with_seq, parse_log_record_key, NON_TRANSACTION_SEQ_NO},
     data::{
         data_file::{DataFile, DATA_FILE_NAME_SUFFIX},
-        log_record::{LogRecord, LogRecordPos, LogRecordType},
+        log_record::{LogRecord, LogRecordPos, LogRecordType, TransactionRecord},
     },
     errors::{Errors, Result},
     index,
@@ -23,6 +32,8 @@ pub struct Engine {
     older_files: Arc<RwLock<HashMap<u32, DataFile>>>, // 旧的数据文件
     pub(crate) index: Box<dyn index::Indexer>, // 数据内存索引
     file_ids: Vec<u32>, // 数据库启动时的文件 id，只用于加载索引时使用，不能在其他的地方更新或使用
+    pub(crate) batch_commit_lock: Mutex<()>, // 事务提交保证串行化
+    pub(crate) seq_no: Arc<AtomicUsize>, // 事务序列号，全局递增
 }
 
 impl Engine {
@@ -76,10 +87,17 @@ impl Engine {
             older_files: Arc::new(RwLock::new(older_files)),
             index: Box::new(index::new_indexer(options.index_type)),
             file_ids,
+            batch_commit_lock: Mutex::new(()),
+            seq_no: Arc::new(AtomicUsize::new(1)),
         };
 
         // 从数据文件中加载索引
-        engine.load_index_from_data_files()?;
+        let current_seq_no = engine.load_index_from_data_files()?;
+
+        // 更新当前事务序列号
+        if current_seq_no > 0 {
+            engine.seq_no.store(current_seq_no + 1, Ordering::SeqCst);
+        }
 
         Ok(engine)
     }
@@ -105,7 +123,7 @@ impl Engine {
 
         // 构造 LogRecord
         let mut record = LogRecord {
-            key: key.to_vec(),
+            key: log_record_key_with_seq(key.to_vec(), NON_TRANSACTION_SEQ_NO),
             value: value.to_vec(),
             rec_type: LogRecordType::NORMAL,
         };
@@ -137,7 +155,7 @@ impl Engine {
 
         // 构造 LogRecord，标识其是被删除的
         let mut record = LogRecord {
-            key: key.to_vec(),
+            key: log_record_key_with_seq(key.to_vec(), NON_TRANSACTION_SEQ_NO),
             value: Default::default(),
             rec_type: LogRecordType::DELETED,
         };
@@ -203,7 +221,7 @@ impl Engine {
     }
 
     // 追加写数据到当前活跃文件中
-    fn append_log_record(&self, log_record: &mut LogRecord) -> Result<LogRecordPos> {
+    pub(crate) fn append_log_record(&self, log_record: &mut LogRecord) -> Result<LogRecordPos> {
         let dir_path = self.options.dir_path.clone();
 
         // 输入数据进行编码
@@ -247,11 +265,16 @@ impl Engine {
 
     /// 从数据文件中加载内存索引
     /// 遍历数据文件中的内容，并依次处理其中的记录
-    fn load_index_from_data_files(&self) -> Result<()> {
+    fn load_index_from_data_files(&self) -> Result<usize> {
+        let mut current_seq_no = NON_TRANSACTION_SEQ_NO;
+
         // 数据文件为空，直接返回
         if self.file_ids.is_empty() {
-            return Ok(());
+            return Ok(current_seq_no);
         }
+
+        // 暂存事务相关的数据
+        let mut transaction_records = HashMap::new();
 
         let active_file = self.active_file.read();
         let older_files = self.older_files.read();
@@ -268,7 +291,7 @@ impl Engine {
                     }
                 };
 
-                let (log_record, size) = match log_record_res {
+                let (mut log_record, size) = match log_record_res {
                     Ok(result) => (result.record, result.size),
                     Err(e) => {
                         if e == Errors::ReadDataFileEOF {
@@ -284,14 +307,39 @@ impl Engine {
                     offset,
                 };
 
-                let ok = match log_record.rec_type {
-                    LogRecordType::NORMAL => {
-                        self.index.put(log_record.key.to_vec(), log_record_pos)
+                // 解析 key，拿到实际的 key 和 seq no
+                let (real_key, seq_no) = parse_log_record_key(log_record.key.clone());
+                // 非事务提交的情况，直接更新内存索引
+                if seq_no == NON_TRANSACTION_SEQ_NO {
+                    self.update_index(real_key, log_record.rec_type, log_record_pos);
+                } else {
+                    // 事务有提交的标识，更新内存索引
+                    if log_record.rec_type == LogRecordType::TXNFINISHED {
+                        let records: &Vec<TransactionRecord> =
+                            transaction_records.get(&seq_no).unwrap();
+                        for txn_record in records.iter() {
+                            self.update_index(
+                                txn_record.record.key.clone(),
+                                txn_record.record.rec_type,
+                                txn_record.pos,
+                            );
+                        }
+                        transaction_records.remove(&seq_no);
+                    } else {
+                        log_record.key = real_key;
+                        transaction_records
+                            .entry(seq_no)
+                            .or_insert(Vec::new())
+                            .push(TransactionRecord {
+                                record: log_record,
+                                pos: log_record_pos,
+                            });
                     }
-                    LogRecordType::DELETED => self.index.delete(log_record.key.to_vec()),
-                };
-                if !ok {
-                    return Err(Errors::IndexUpdateFailed);
+                }
+
+                // 更新当前事务序列号
+                if seq_no > current_seq_no {
+                    current_seq_no = seq_no;
                 }
 
                 // 递增 offset，下一次读取的时候从新的位置开始
@@ -303,7 +351,17 @@ impl Engine {
                 active_file.set_write_off(offset);
             }
         }
-        Ok(())
+        Ok(current_seq_no)
+    }
+
+    // 加载索引时更新内存数据
+    fn update_index(&self, key: Vec<u8>, rec_type: LogRecordType, pos: LogRecordPos) {
+        if rec_type == LogRecordType::NORMAL {
+            self.index.put(key.clone(), pos);
+        }
+        if rec_type == LogRecordType::DELETED {
+            self.index.delete(key);
+        }
     }
 }
 
