@@ -30,7 +30,7 @@ impl DataFile {
     /// 创建或打开一个新的数据文件
     pub fn new(dir_path: PathBuf, file_id: u32, io_type: IOType) -> Result<DataFile> {
         // 根据 path 和 id 构造出完整的文件名称
-        let file_name = get_data_file_name(dir_path, file_id);
+        let file_name: PathBuf = get_data_file_name(dir_path, file_id);
         // 初始化 io manager
         let io_manager = new_io_manager(file_name, io_type);
 
@@ -175,10 +175,36 @@ impl DataFile {
     }
 }
 
-/// 获取文件名称
+/// 拼接文件路径名称: 路径, 文件id+后缀
 pub fn get_data_file_name(dir_path: PathBuf, file_id: u32) -> PathBuf {
-    let name = std::format!("{:09}", file_id) + DATA_FILE_NAME_SUFFIX;
+    let name: String = std::format!("{:09}", file_id) + DATA_FILE_NAME_SUFFIX;
     dir_path.join(name)
+}
+
+#[cfg(test)]
+mod test_01 {
+    use super::*;
+
+    // 集中测试: DataFile::new方法
+    #[test]
+    fn test_get_data_file_name() {
+        // 注意这里是从根目录开始的路径
+        let dir_path: PathBuf = PathBuf::from("/tmp/bitcask-rs");
+        let file_id: u32 = 123;
+        let file_name: PathBuf = get_data_file_name(dir_path, file_id);
+        println!("file_name: {:?}", file_name);
+        assert_eq!(file_name, PathBuf::from("/tmp/bitcask-rs/000000123.data"));
+    }
+
+    #[test]
+    fn test_new_data_file() {
+        let dir_path: PathBuf = PathBuf::from("/tmp/bitcask-rs");
+        let file_id: u32 = 123;
+        let data_file_res1 = DataFile::new(dir_path.clone(), file_id, IOType::StandardFIO);
+        assert!(data_file_res1.is_ok());
+        let data_file1 = data_file_res1.unwrap();
+        assert_eq!(data_file1.get_file_id(), file_id);
+    }
 }
 
 #[cfg(test)]

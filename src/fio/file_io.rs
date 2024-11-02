@@ -19,6 +19,7 @@ pub struct FileIO {
 
 impl FileIO {
     pub fn new(file_name: PathBuf) -> Result<Self> {
+        // fs: 可用于配置文件打开方式的选项和标志。
         match OpenOptions::new()
             .create(true)
             .read(true)
@@ -75,6 +76,19 @@ impl IOManager for FileIO {
         let read_guard = self.fd.read();
         let metadata = read_guard.metadata().unwrap();
         metadata.len()
+    }
+}
+
+#[cfg(test)]
+mod hejj_test {
+    use super::*;
+
+    #[test]
+    fn 打开不存在的文件() {
+        let file_name: PathBuf = PathBuf::from("/tmp/bitcask-rs/000000123.data");
+        let file_io_res: Result<FileIO> = FileIO::new(file_name);
+        assert!(file_io_res.is_err());
+        assert_eq!(file_io_res.err().unwrap(), Errors::FailedToOpenDataFile); // 自定义的打开文件失败的错误!
     }
 }
 

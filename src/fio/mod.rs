@@ -29,3 +29,14 @@ pub fn new_io_manager(file_name: PathBuf, io_type: IOType) -> Box<dyn IOManager>
         IOType::MemoryMap => Box::new(MMapIO::new(file_name).unwrap()),
     }
 }
+
+#[cfg(test)]
+mod test_01 {
+    use super::*;
+
+    #[test]
+    fn test_new_io_manager() {
+        let file_name: PathBuf = PathBuf::from("/tmp/bitcask-rs/000000123.data");
+        let io_manager = new_io_manager(file_name, IOType::StandardFIO);
+    }
+}
