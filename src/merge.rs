@@ -36,13 +36,17 @@ impl Engine {
 
         // 判断是否达到了 merge 的比例阈值
         let reclaim_size = self.reclaim_size.load(Ordering::SeqCst);
-        let total_size = util::file::dir_disk_size(self.options.dir_path.clone());
+
+        // 磁盘数据目录的大小
+        let total_size: u64 = util::file::dir_disk_size(self.options.dir_path.clone());
+        assert!(total_size > 0);
         if (reclaim_size as f32 / total_size as f32) < self.options.data_file_merge_ratio {
             return Err(Errors::MergeRatioUnreached);
         }
 
         // 判断磁盘剩余空间是否足够容纳 merge 之后的数据
-        let available_size = util::file::available_disk_size();
+        let available_size: u64 = util::file::available_disk_size();
+        assert!(available_size > 0);
         if total_size - reclaim_size as u64 >= available_size {
             return Err(Errors::MeregeNoEnoughSpace);
         }

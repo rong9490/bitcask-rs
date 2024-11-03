@@ -1,4 +1,7 @@
 use std::path::PathBuf;
+use std::default::Default;
+
+// HACK 什么是 Default trait ?
 
 #[derive(Clone)]
 pub struct Options {
@@ -24,6 +27,35 @@ pub struct Options {
     pub data_file_merge_ratio: f32,
 }
 
+#[test]
+fn test_options_memory() {
+    let opt: Options = Default::default();
+    assert_eq!(std::mem::size_of_val(&opt), 48);
+
+    assert_eq!(std::mem::size_of_val(&opt.dir_path), 24); // PathBuf(胖指针)
+    assert_eq!(std::mem::size_of::<PathBuf>(), 24);
+
+    assert_eq!(std::mem::size_of_val(&opt.data_file_size), 8); // u64 8个字节
+    assert_eq!(std::mem::size_of::<u64>(), 8);
+
+    assert_eq!(std::mem::size_of_val(&opt.sync_writes), 1); // bool 1个字节
+    assert_eq!(std::mem::size_of::<bool>(), 1);
+
+    assert_eq!(std::mem::size_of_val(&opt.bytes_per_sync), 8); // usize 8个字节
+    assert_eq!(std::mem::size_of::<usize>(), 8);
+
+    assert_eq!(std::mem::size_of_val(&opt.index_type), 1); // IndexType 1个字节(因为是简单枚举)
+    assert_eq!(std::mem::size_of::<IndexType>(), 1);
+
+    assert_eq!(std::mem::size_of_val(&opt.mmap_at_startup), 1); // bool 1个字节
+}
+
+#[test]
+fn test_options_default() {
+    let opt: Options = Default::default();
+    assert_eq!(opt.dir_path, std::env::temp_dir().join("bitcask-rs"));
+}
+
 #[derive(Clone, PartialEq)]
 pub enum IndexType {
     /// BTree 索引
@@ -36,6 +68,7 @@ pub enum IndexType {
     BPlusTree,
 }
 
+// 默认值 结构体实现
 impl Default for Options {
     fn default() -> Self {
         Self {

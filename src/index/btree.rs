@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, sync::Arc};
 
 use bytes::Bytes;
-use parking_lot::RwLock;
+use parking_lot::RwLock; // Read Write Lock 读写锁
 
 use crate::{data::log_record::LogRecordPos, errors::Result, options::IteratorOptions};
 
@@ -60,6 +60,35 @@ impl Indexer for BTree {
             curr_index: 0,
             options,
         })
+    }
+}
+
+#[cfg(test)]
+mod test_btree {
+    use super::*;
+
+    #[test]
+    fn test_btree_memory() {
+        let bt: BTree = BTree::new();
+
+        // 结构体类型的大小(编译期)
+        assert_eq!(std::mem::size_of::<BTree>(), 8);
+        assert_eq!(std::mem::size_of::<BTreeMap<Vec<u8>, LogRecordPos>>(), 24);
+        assert_eq!(std::mem::size_of::<Arc<RwLock<BTreeMap<Vec<u8>, LogRecordPos>>>>(), 8);
+
+        // 结构体实例的大小(运行时)
+        // BTree size = 8, align = 0x8, offset = 0x0
+        assert_eq!(std::mem::size_of_val(&bt), 8);
+        assert_eq!(std::mem::align_of_val(&bt), 8);
+        assert_eq!(std::mem::offset_of!(BTree, tree), 0);
+    }
+
+    #[test]
+    fn test_btree_iterator() {
+        let bt = BTree::new();
+        let mut iter = bt.iterator(IteratorOptions::default());
+        iter.seek("".as_bytes().to_vec());
+        assert!(iter.next().is_none());
     }
 }
 
