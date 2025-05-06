@@ -1,6 +1,8 @@
 use bytes::{BufMut, BytesMut};
 use prost::{encode_length_delimiter, length_delimiter_len};
 
+// 派生"PartialEq"宏 --> 允许该枚举值被比较相等
+// 派生"Clone"宏 --> 允许该枚举值被复制
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum LogRecordType {
     // 正常 put 的数据

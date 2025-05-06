@@ -8,7 +8,7 @@ use parking_lot::Mutex;
 use prost::{decode_length_delimiter, encode_length_delimiter};
 
 use crate::{
-    data::log_record::{LogRecord, LogRecordType},
+    data::log_record2::{LogRecord, LogRecordType},
     db::Engine,
     errors::{Errors, Result},
     options::WriteBatchOptions,
