@@ -1,6 +1,6 @@
 // 派生"PartialEq"宏 --> 允许该枚举值被比较相等
 // 派生"Clone"/"Copy"宏 --> 允许该枚举值被复制
-// C-like枚举(没有携带任何数据的枚举)
+// C-like枚举(没有携带任何数据的枚举, implicit discriminator)
 #[derive(PartialEq, Clone, Copy, Debug)]
 #[repr(u8)] // 明确指定类型为u8, 也就是占用8位(1个字节)
 pub enum LogRecordType {
@@ -12,22 +12,54 @@ pub enum LogRecordType {
     TXNFINISHED = 3,
 }
 
+impl LogRecordType {
+    // 转换函数: 类型收窄, 类型断言
+    pub fn from_u8(v: u8) -> Self {
+        match v {
+            1 => LogRecordType::NORMAL,
+            2 => LogRecordType::DELETED,
+            3 => LogRecordType::TXNFINISHED,
+            _ => panic!("illegal log_record_type!!"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-  use super::*;
+    use super::*;
 
-  #[test]
-  fn test_log_record_type() {
-    // 用来判断类型的大小, 而LogRecordType::NORMAL是个具体的值, 不是类型, 值的内存应该用size_of_val
-    // assert_eq!(std::mem::size_of::<LogRecordType>(), std::mem::size_of::<LogRecordType::NORMAL>());
-    // 这种写法叫做turbofish
-    assert_eq!(std::mem::size_of::<LogRecordType>(), 1);
+    #[test]
+    fn test_log_record_type() {
+        assert_eq!(std::mem::size_of::<LogRecordType>(), 1); // 这种写法叫做turbofish
+                                                             // 三个枚举值的内存相等, 大小都等于枚举的大小
+        let normal: LogRecordType = LogRecordType::NORMAL;
+        let deleted: LogRecordType = LogRecordType::DELETED;
+        let tenfinished: LogRecordType = LogRecordType::TXNFINISHED;
+        assert_eq!(
+            std::mem::size_of_val(&normal),
+            std::mem::size_of_val(&deleted)
+        ); // 参数是传入引用, 而不是所有权
+        assert_eq!(
+            std::mem::size_of_val(&normal),
+            std::mem::size_of_val(&tenfinished)
+        );
+        assert_eq!(std::mem::size_of_val(&normal), 1);
+    }
 
-    let normal: LogRecordType = LogRecordType::NORMAL;
-    let deleted: LogRecordType = LogRecordType::DELETED;
-    let tenfinished: LogRecordType = LogRecordType::TXNFINISHED;
+    #[test]
+    fn test_log_record_type_from_u8() {
+        let v1: u8 = 1;
+        let v2: u8 = 2;
+        let v3: u8 = 3;
+        assert_eq!(LogRecordType::from_u8(v1), LogRecordType::NORMAL);
+        assert_eq!(LogRecordType::from_u8(v2), LogRecordType::DELETED);
+        assert_eq!(LogRecordType::from_u8(v3), LogRecordType::TXNFINISHED);
+    }
 
-    assert_eq!(std::mem::size_of_val(&normal), std::mem::size_of_val(&deleted));
-    assert_eq!(std::mem::size_of_val(&normal), 1);
-  }
+    #[test]
+    #[should_panic(expected = "illegal log_record_type!!")]
+    fn test_log_record_type_from_u8_should_panic() {
+        let v4: u8 = 4;
+        LogRecordType::from_u8(v4);
+    }
 }

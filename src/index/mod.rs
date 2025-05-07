@@ -3,7 +3,7 @@ pub mod btree;
 use bytes::Bytes;
 
 use crate::{
-    data::log_record2::LogRecordPos,
+    data::log_record::LogRecordPos,
     errors::Result,
     options::{IndexType, IteratorOptions},
 };

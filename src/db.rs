@@ -16,7 +16,7 @@ use crate::{
     batch::{log_record_key_with_seq, parse_log_record_key, NON_TRANSACTION_SEQ_NO},
     data::{
         data_file::{DataFile, DATA_FILE_NAME_SUFFIX},
-        log_record2::{LogRecord, LogRecordPos, LogRecordType, TransactionRecord},
+        log_record::{LogRecord, LogRecordPos, LogRecordType, TransactionRecord},
     },
     errors::{Errors, Result},
     index,

@@ -9,7 +9,7 @@ use crate::{
     fio::{self, new_io_manager},
 };
 
-use super::log_record2::{max_log_record_header_size, LogRecord, LogRecordType, ReadLogRecord};
+use super::log_record::{max_log_record_header_size, LogRecord, LogRecordType, ReadLogRecord};
 
 pub const DATA_FILE_NAME_SUFFIX: &str = ".data";
 
