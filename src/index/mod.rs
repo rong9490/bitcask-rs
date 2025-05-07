@@ -5,7 +5,7 @@ use bytes::Bytes;
 use crate::{
     data::log_record::LogRecordPos,
     errors::Result,
-    options::{IndexType, IteratorOptions},
+    _options::{IndexType, IteratorOptions},
 };
 
 /// Indexer 抽象索引接口，后续如果想要接入其他的数据结构，则直接实现这个接口即可

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::{
     db::Engine,
     errors::Errors,
-    options::Options,
+    _options::Options,
     util::rand_kv::{get_test_key, get_test_value},
 };
 

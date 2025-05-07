@@ -1,6 +1,8 @@
 // 文件操作 fio
 // 多线程之间传递, 需要 Sync + Send
 
+pub mod utils;
+
 mod file_io;
 
 use std::path::PathBuf;

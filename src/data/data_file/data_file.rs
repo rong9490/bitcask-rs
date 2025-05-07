@@ -1,17 +1,13 @@
-use std::{path::PathBuf, sync::Arc};
-
+use super::super::{max_log_record_header_size, LogRecord, LogRecordType, ReadLogRecord};
+use super::utils::get_data_file_name;
+use crate::errors::{Errors, Result};
+use crate::fio::{self, new_io_manager};
 use bytes::{Buf, BytesMut};
 use parking_lot::RwLock;
 use prost::{decode_length_delimiter, length_delimiter_len};
+use std::{path::PathBuf, sync::Arc};
 
-use crate::{
-    errors::{Errors, Result},
-    fio::{self, new_io_manager},
-};
-
-use super::log_record::{max_log_record_header_size, LogRecord, LogRecordType, ReadLogRecord};
-
-pub const DATA_FILE_NAME_SUFFIX: &str = ".data";
+// HACK 后续, 整理, 简化, 消化
 
 // 数据文件
 pub struct DataFile {
@@ -24,7 +20,7 @@ impl DataFile {
     /// 创建或打开一个新的数据文件
     pub fn new(dir_path: PathBuf, file_id: u32) -> Result<DataFile> {
         // 根据 path 和 id 构造出完整的文件名称
-        let file_name = get_data_file_name(dir_path, file_id);
+        let file_name: PathBuf = get_data_file_name(dir_path, file_id);
         // 初始化 io manager
         let io_manager = new_io_manager(file_name)?;
 
@@ -79,7 +75,7 @@ impl DataFile {
             .read(&mut kv_buf, offset + actual_header_size as u64)?;
 
         // 构造 LogRecord
-        let log_record = LogRecord {
+        let log_record: LogRecord = LogRecord {
             key: kv_buf.get(..key_size).unwrap().to_vec(),
             value: kv_buf.get(key_size..kv_buf.len() - 4).unwrap().to_vec(),
             rec_type: LogRecordType::from_u8(rec_type),
@@ -111,12 +107,6 @@ impl DataFile {
     pub fn sync(&self) -> Result<()> {
         self.io_manager.sync()
     }
-}
-
-/// 获取文件名称
-fn get_data_file_name(dir_path: PathBuf, file_id: u32) -> PathBuf {
-    let name = std::format!("{:09}", file_id) + DATA_FILE_NAME_SUFFIX;
-    dir_path.join(name)
 }
 
 #[cfg(test)]

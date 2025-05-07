@@ -8,4 +8,5 @@ pub use log_record::{
     LogRecordPos,
     ReadLogRecord,
     TransactionRecord,
+    max_log_record_header_size,
 };
