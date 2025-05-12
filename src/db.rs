@@ -20,7 +20,7 @@ use crate::{
     },
     errors::{Errors, Result},
     index,
-    options::Options::,
+    options::options::Options,
 };
 
 const INITIAL_FILE_ID: u32 = 0;

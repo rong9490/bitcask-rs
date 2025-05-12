@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bytes::Bytes;
 use parking_lot::RwLock;
 
-use crate::{db::Engine, errors::Result, index::IndexIterator, _options::IteratorOptions};
+use crate::{db::Engine, errors::Result, index::IndexIterator, options::iterator_options::IteratorOptions};
 
 /// 迭代器接口
 pub struct Iterator<'a> {
@@ -72,7 +72,7 @@ impl Iterator<'_> {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::{_options::Options, util};
+    use crate::{options::options::Options, util};
 
     use super::*;
 

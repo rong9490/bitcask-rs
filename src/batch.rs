@@ -11,7 +11,7 @@ use crate::{
     data::log_record::{LogRecord, LogRecordType},
     db::Engine,
     errors::{Errors, Result},
-    _options::WriteBatchOptions,
+    options::write_batch_options::WriteBatchOptions,
 };
 
 const TXN_FIN_KEY: &[u8] = "txn-fin".as_bytes();
@@ -160,7 +160,7 @@ pub(crate) fn parse_log_record_key(key: Vec<u8>) -> (Vec<u8>, usize) {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::{_options::Options, util};
+    use crate::{options::options::Options, util};
 
     use super::*;
 
