@@ -2,11 +2,9 @@ use std::{
     collections::HashMap,
     sync::{atomic::Ordering, Arc},
 };
-
 use bytes::{BufMut, Bytes, BytesMut};
 use parking_lot::Mutex;
 use prost::{decode_length_delimiter, encode_length_delimiter};
-
 use crate::{
     data::log_record::{LogRecord, LogRecordType},
     db::Engine,
