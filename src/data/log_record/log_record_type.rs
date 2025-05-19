@@ -1,8 +1,5 @@
-// 派生"PartialEq"宏 --> 允许该枚举值被比较相等
-// 派生"Clone"/"Copy"宏 --> 允许该枚举值被复制
-// C-like枚举(没有携带任何数据的枚举, implicit discriminator)
 #[derive(PartialEq, Clone, Copy, Debug)]
-#[repr(u8)] // 明确指定类型为u8, 也就是占用8位(1个字节)
+#[repr(u8)] // 明确指定该枚举类型值为u8, 也就是占用8位(1个字节)
 pub enum LogRecordType {
     // 正常 put 的数据
     NORMAL = 1,
@@ -13,13 +10,13 @@ pub enum LogRecordType {
 }
 
 impl LogRecordType {
-    // 转换函数: 类型收窄, 类型断言
+    // 转换函数: 类型收窄, 转为枚举值
     pub fn from_u8(v: u8) -> Self {
         match v {
             1 => LogRecordType::NORMAL,
             2 => LogRecordType::DELETED,
             3 => LogRecordType::TXNFINISHED,
-            _ => panic!("illegal log_record_type!!"),
+            v => panic!("非法的 log_record_type: {}", v),
         }
     }
 }

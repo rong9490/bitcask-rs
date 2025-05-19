@@ -13,7 +13,6 @@ pub struct LogRecord {
 
 impl LogRecord {
     // encode 对 LogRecord 进行编码，返回字节数组及长度
-    //
     //	+-------------+--------------+-------------+--------------+-------------+-------------+
     //	|  type 类型   |    key size |   value size |      key    |      value   |  crc 校验值  |
     //	+-------------+-------------+--------------+--------------+-------------+-------------+
@@ -67,6 +66,16 @@ impl LogRecord {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_log_record_memory_size  () {
+        let rec = LogRecord {
+            key: "name".as_bytes().to_vec(),
+            value: "bitcask-rs".as_bytes().to_vec(),
+            rec_type: LogRecordType::NORMAL,
+        };
+        assert_eq!(rec.encoded_length(), 14);
+    }
 
     #[test]
     fn test_log_record_encode_and_crc() {

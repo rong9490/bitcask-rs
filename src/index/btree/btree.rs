@@ -5,6 +5,7 @@ use parking_lot::RwLock;
 use std::{collections::BTreeMap, sync::Arc};
 use super::super::index_iterator::IndexIterator;
 use super::super::super::options::iterator_options::IteratorOptions;
+use super::btree_interator::BTreeIterator;
 
 /// BTree索引, 主要是封装BTreeMap数据结构
 pub struct BTree {
