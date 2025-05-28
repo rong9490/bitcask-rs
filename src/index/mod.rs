@@ -3,8 +3,7 @@ pub mod indexer;
 pub mod index_iterator;
 pub mod utils;
 pub mod btree;
-// pub mod bptree;
-// pub mod skiplist;
+pub mod bptree;
 
 // use bytes::Bytes;
 // use std::path::PathBuf;

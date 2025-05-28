@@ -8,7 +8,6 @@ pub mod batch;
 pub mod db;
 pub mod iterator;
 pub mod options;
-// pub mod old_options;
 
 #[cfg(test)]
 mod db_tests;

@@ -1,9 +1,7 @@
-use std::sync::Arc;
-
-use bytes::Bytes;
-use parking_lot::RwLock;
-
-use crate::{db::Engine, errors::Result, index::IndexIterator, options::iterator_options::IteratorOptions};
+use std::sync::Arc; // '无畏并发'--原子引用计数Arc<T>
+use bytes::Bytes; // 字节类型
+use parking_lot::RwLock; // 读写互斥锁
+use crate::{db::Engine, errors::Result, index::index_iterator::IndexIterator, options::iterator_options::IteratorOptions};
 
 /// 迭代器接口
 pub struct Iterator<'a> {
@@ -11,6 +9,7 @@ pub struct Iterator<'a> {
     engine: &'a Engine,
 }
 
+/// TODO ?? 为什么Engine在这里添加方法, 不是在内部更合适嘛
 impl Engine {
     /// 获取迭代器
     pub fn iter(&self, options: IteratorOptions) -> Iterator {

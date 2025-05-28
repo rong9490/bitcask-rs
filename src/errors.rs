@@ -2,6 +2,7 @@ use std::result;
 
 use thiserror::Error;
 
+// HINT 一般都需要一个全局的兜底的, 错误枚举类型, 便于枚举与穷尽所有异常!
 #[derive(Error, Debug, PartialEq)]
 pub enum Errors {
     #[error("failed to read from data file")]
@@ -53,4 +54,5 @@ pub enum Errors {
     ExceedMaxBatchNum,
 }
 
+// 这个Result绑定的就是自定义的错误枚举
 pub type Result<T> = result::Result<T, Errors>;

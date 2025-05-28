@@ -15,7 +15,7 @@ pub trait Indexer: Sync + Send {
   fn delete(&self, key: Vec<u8>) -> Option<LogRecordPos>;
 
   /// 获取索引存储的所有key
-  fn list_key(&self) -> Result<Vec<Bytes>>;
+  fn list_keys(&self) -> Result<Vec<Bytes>>;
 
   /// 返回索引迭代器
   fn iterator(&self, options: IteratorOptions) -> Box<dyn IndexIterator>;

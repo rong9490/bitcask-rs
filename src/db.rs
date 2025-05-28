@@ -7,11 +7,9 @@ use std::{
         Arc,
     },
 };
-
 use bytes::Bytes;
 use log::warn;
 use parking_lot::{Mutex, RwLock};
-
 use crate::{
     batch::{log_record_key_with_seq, parse_log_record_key, NON_TRANSACTION_SEQ_NO},
     data::{
@@ -30,7 +28,7 @@ pub struct Engine {
     options: Arc<Options>,
     active_file: Arc<RwLock<DataFile>>, // 当前活跃数据文件
     older_files: Arc<RwLock<HashMap<u32, DataFile>>>, // 旧的数据文件
-    pub(crate) index: Box<dyn index::Indexer>, // 数据内存索引
+    pub(crate) index: Box<dyn index::indexer::Indexer>, // 数据内存索引
     file_ids: Vec<u32>, // 数据库启动时的文件 id，只用于加载索引时使用，不能在其他的地方更新或使用
     pub(crate) batch_commit_lock: Mutex<()>, // 事务提交保证串行化
     pub(crate) seq_no: Arc<AtomicUsize>, // 事务序列号，全局递增
