@@ -80,6 +80,7 @@ dependencies = [
  "crc32fast",
  "crossbeam-skiplist",
  "env_logger",
+ "fs2",
  "jammdb",
  "log",
  "parking_lot",
