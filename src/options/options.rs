@@ -5,12 +5,24 @@ use std::path::PathBuf;
 pub struct Options {
     /// 数据库目录
     pub dir_path: PathBuf,
-    /// 数据文件大小
+
+    // 数据文件大小
     pub data_file_size: u64,
-    /// 是否每次写都持久化
+
+    // 是否每次写都持久化
     pub sync_writes: bool,
-    /// 索引类型
+
+    // 累计多少字节后触发持久化
+    pub bytes_per_sync: usize,
+
+    // 索引类型
     pub index_type: IndexType,
+
+    // 是否用mmap打开数据库
+    pub mmap_at_startup: bool,
+
+    // 执行数据文件merge的阈值
+    pub data_file_merge_ratio: f32,
 }
 
 impl Default for Options {
@@ -19,7 +31,10 @@ impl Default for Options {
             dir_path: std::env::temp_dir().join("bitcask-rs"),
             data_file_size: 256 * 1024 * 1024, // 256MB
             sync_writes: false,
+            bytes_per_sync: 0,
             index_type: IndexType::BTree,
+            mmap_at_startup: true,
+            data_file_merge_ratio: 0.5
         }
     }
 }
