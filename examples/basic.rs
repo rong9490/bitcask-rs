@@ -1,9 +1,12 @@
 // cargo run --example basic
 
-use bitcask_rs::options::options::Options;
+// use bitcask_rs::options::options::Options;
+use bitcask_rs::util::rand_kv::hello;
 
 fn main () {
-  print!("basic - example!");
+  println!("basic - example!");
 
-  let opts: Options = Options::default();
+  hello();
+
+  // let opts: Options = Options::default();
 }

@@ -1,16 +1,18 @@
 [package]
 name = "bitcask-rs"
 version = "0.1.0"
-edition = "2021"
+
+# edition = "2021"
+edition = "2024"
 
 [dependencies]
 env_logger = "0.11.5"
 parking_lot = "0.12.1"
 log = "0.4.22"
-thiserror = "1.0.64"
+thiserror = "2.0.16"
 bytes = "1.7.2"
-prost = "0.13.3"
+prost = "0.14.1"
 crc32fast = "1.4.2"
 crossbeam-skiplist = "0.1.1"
-jammdb = "0.9.0"
+jammdb = "0.11.0"
 fs2 = "0.4.3"

@@ -1,5 +1,9 @@
 use bytes::Bytes;
 
+pub fn hello() {
+    println!("hello!");
+}
+
 #[allow(dead_code)]
 pub fn get_test_key(i: usize) -> Bytes {
     Bytes::from(std::format!("bitcask-rs-key-{:09}", i))
