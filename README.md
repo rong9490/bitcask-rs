@@ -1,3 +1,7 @@
 ```
   workspace
 ```
+
+```
+  cargo init
+```
