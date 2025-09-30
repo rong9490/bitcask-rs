@@ -1,20 +1,16 @@
 use std::{fs::OpenOptions, path::PathBuf, sync::Arc};
-
-// TODO
 use log::error;
 use memmap2::Mmap;
 use parking_lot::Mutex;
-
-use crate::errors::{Errors, Result};
-
 use super::IOManager;
+use crate::errors::{AppErrors, AppResult};
 
 pub struct MMapIO {
     map: Arc<Mutex<Mmap>>,
 }
 
 impl MMapIO {
-    pub fn new(file_name: PathBuf) -> Result<Self> {
+    pub fn new(file_name: PathBuf) -> AppResult<Self> {
         match OpenOptions::new()
             .create(true)
             .read(true)
@@ -29,18 +25,18 @@ impl MMapIO {
             }
             Err(e) => {
                 error!("failed to open data file: {}", e);
-                return Err(Errors::FailedToOpenDataFile);
+                return Err(AppErrors::FailedToOpenDataFile);
             }
         }
     }
 }
 
 impl IOManager for MMapIO {
-    fn read(&self, buf: &mut [u8], offset: u64) -> Result<usize> {
+    fn read(&self, buf: &mut [u8], offset: u64) -> AppResult<usize> {
         let map_arr = self.map.lock();
         let end = offset + buf.len() as u64;
         if end > map_arr.len() as u64 {
-            return Err(Errors::ReadDataFileEOF);
+            return Err(AppErrors::ReadDataFileEOF);
         }
         let val = &map_arr[offset as usize..end as usize];
         buf.copy_from_slice(val);
@@ -48,11 +44,11 @@ impl IOManager for MMapIO {
         Ok(val.len())
     }
 
-    fn write(&self, _buf: &[u8]) -> Result<usize> {
+    fn write(&self, _buf: &[u8]) -> AppResult<usize> {
         unimplemented!()
     }
 
-    fn sync(&self) -> Result<()> {
+    fn sync(&self) -> AppResult<()> {
         unimplemented!()
     }
 
@@ -80,7 +76,7 @@ mod tests {
         let mmap_io1 = mmap_res1.ok().unwrap();
         let mut buf1 = [0u8; 10];
         let read_res1 = mmap_io1.read(&mut buf1, 0);
-        assert_eq!(read_res1.err().unwrap(), Errors::ReadDataFileEOF);
+        assert_eq!(read_res1.err().unwrap(), AppErrors::ReadDataFileEOF);
 
         let fio_res = FileIO::new(path.clone());
         assert!(fio_res.is_ok());

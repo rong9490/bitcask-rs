@@ -1,11 +1,12 @@
 use std::{sync::Arc, path::PathBuf};
 use parking_lot::RwLock;
+use crate::fio::IOManager;
 
 // 数据文件
 pub struct DataFile {
     file_id: Arc<RwLock<u32>>,           // 数据文件id
     write_off: Arc<RwLock<u64>>,         // 当前写偏移，记录该数据文件写到哪个位置了
-    io_manager: Box<dyn fio::IOManager>, // IO 管理接口
+    io_manager: Box<dyn IOManager>, // IO 管理接口
 }
 
 // impl DataFile {
