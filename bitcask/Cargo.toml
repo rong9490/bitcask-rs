@@ -8,3 +8,4 @@ thiserror = { workspace = true}
 prost = { workspace = true }
 bytes = { workspace = true }
 crc32fast = { workspace = true }
+parking_lot = { workspace = true }

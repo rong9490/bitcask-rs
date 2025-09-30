@@ -7,7 +7,6 @@
 
 # [dependencies]
 # env_logger = "0.11.5"
-# parking_lot = "0.12.1"
 # log = "0.4.22"
 # crossbeam-skiplist = "0.1.1"
 # jammdb = "0.11.0"
@@ -20,8 +19,10 @@ edition = "2024"
 members = ["bitcask"]
 exclude = []
 default-members = ["bitcask"]
+
 [workspace.dependencies]
 thiserror = "2.0.17"
 prost = "0.14.1"
 bytes = "1.7.2"
 crc32fast = "1.4.2"
+parking_lot = "0.12.1"

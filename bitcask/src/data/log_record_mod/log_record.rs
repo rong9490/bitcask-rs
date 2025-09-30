@@ -63,3 +63,41 @@ impl LogRecord {
             + 4
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_log_record_encode_and_crc() {
+        // 正常的一条 LogRecord 编码
+        let rec1 = LogRecord {
+            key: "name".as_bytes().to_vec(),
+            value: "bitcask-rs".as_bytes().to_vec(),
+            rec_type: LogRecordType::NORMAL,
+        };
+        let enc1 = rec1.encode();
+        assert!(enc1.len() > 5);
+        assert_eq!(1020360578, rec1.get_crc());
+
+        // LogRecord 的 value 为空
+        let rec2 = LogRecord {
+            key: "name".as_bytes().to_vec(),
+            value: Default::default(),
+            rec_type: LogRecordType::NORMAL,
+        };
+        let enc2 = rec2.encode();
+        assert!(enc2.len() > 5);
+        assert_eq!(3756865478, rec2.get_crc());
+
+        // 类型为 Deleted 的情况
+        let rec3 = LogRecord {
+            key: "name".as_bytes().to_vec(),
+            value: "bitcask-rs".as_bytes().to_vec(),
+            rec_type: LogRecordType::DELETED,
+        };
+        let enc3 = rec3.encode();
+        assert!(enc3.len() > 5);
+        assert_eq!(1867197446, rec3.get_crc());
+    }
+}
