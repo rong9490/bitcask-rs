@@ -20,6 +20,7 @@ pub trait IOManager: Sync + Send {
 }
 
 /// 根据文件名称初始化 IOManager
+/// Box<dyn Trait> 动态分发
 pub fn new_io_manager(file_name: PathBuf, io_type: IOType) -> Box<dyn IOManager> {
     match io_type {
         IOType::StandardFIO => Box::new(FileIO::new(file_name).unwrap()),

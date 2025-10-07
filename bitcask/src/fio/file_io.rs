@@ -6,13 +6,13 @@ use std::{
     sync::Arc,
 };
 use parking_lot::RwLock;
-use crate::errors::{AppErrors, AppResult};
 use log::error;
 use super::IOManager;
+use crate::errors::{AppErrors, AppResult};
 
 /// FileIO 标准系统文件 IO
 pub struct FileIO {
-    fd: Arc<RwLock<File>>, // 系统文件描述符
+    fd: Arc<RwLock<File>>, // 系统文件描述符, Arc+RwLock 常见组合(原子读写锁)
 }
 
 impl FileIO {

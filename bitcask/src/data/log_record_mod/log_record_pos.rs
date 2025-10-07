@@ -11,7 +11,7 @@ pub struct LogRecordPos {
 
 impl LogRecordPos {
     pub fn encode(&self) -> Vec<u8> {
-        let mut buf = BytesMut::new();
+        let mut buf: BytesMut = BytesMut::new();
         encode_varint(self.file_id as u64, &mut buf);
         encode_varint(self.offset, &mut buf);
         encode_varint(self.size as u64, &mut buf);

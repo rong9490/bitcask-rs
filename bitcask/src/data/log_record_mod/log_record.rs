@@ -68,6 +68,7 @@ impl LogRecord {
 mod tests {
     use super::*;
 
+    // TODO 拆分单测, 更独立平整
     #[test]
     fn test_log_record_encode_and_crc() {
         // 正常的一条 LogRecord 编码

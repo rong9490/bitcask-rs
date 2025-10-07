@@ -5,27 +5,30 @@ use parking_lot::Mutex;
 use super::IOManager;
 use crate::errors::{AppErrors, AppResult};
 
+/// 线程安全(原子锁) -> memmap2::Mmap
 pub struct MMapIO {
     map: Arc<Mutex<Mmap>>,
 }
 
 impl MMapIO {
     pub fn new(file_name: PathBuf) -> AppResult<Self> {
-        match OpenOptions::new()
+        // 尝试打开该路径文件
+        return match OpenOptions::new()
             .create(true)
             .read(true)
             .write(true)
             .open(file_name)
         {
             Ok(file) => {
-                let map = unsafe { Mmap::map(&file).expect("failed to map the file") };
-                return Ok(MMapIO {
+                // TODO 为什么要用unsafe ?
+                let map: Mmap = unsafe { Mmap::map(&file).expect("failed to map the file") };
+                Ok(MMapIO {
                     map: Arc::new(Mutex::new(map)),
-                });
+                })
             }
             Err(e) => {
                 error!("failed to open data file: {}", e);
-                return Err(AppErrors::FailedToOpenDataFile);
+                Err(AppErrors::FailedToOpenDataFile)
             }
         }
     }
@@ -34,18 +37,20 @@ impl MMapIO {
 impl IOManager for MMapIO {
     fn read(&self, buf: &mut [u8], offset: u64) -> AppResult<usize> {
         let map_arr = self.map.lock();
-        let end = offset + buf.len() as u64;
+        let end: u64 = offset + buf.len() as u64;
         if end > map_arr.len() as u64 {
             return Err(AppErrors::ReadDataFileEOF);
         }
-        let val = &map_arr[offset as usize..end as usize];
-        buf.copy_from_slice(val);
+        let val: &[u8] = &map_arr[offset as usize..end as usize];
+
+        // 显示/隐式 展开解引用
+        (&mut *buf).copy_from_slice(val);
 
         Ok(val.len())
     }
 
     fn write(&self, _buf: &[u8]) -> AppResult<usize> {
-        unimplemented!()
+        unimplemented!() // todo!(), unreachable!()
     }
 
     fn sync(&self) -> AppResult<()> {
@@ -68,7 +73,7 @@ mod tests {
 
     #[test]
     fn test_mmap_read() {
-        let path = PathBuf::from("/tmp/mmap-test.data");
+        let path: PathBuf = PathBuf::from("/tmp/mmap-test.data");
 
         // 文件为空
         let mmap_res1 = MMapIO::new(path.clone());

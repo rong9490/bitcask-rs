@@ -1,6 +1,11 @@
 use std::{sync::Arc, path::PathBuf};
 use parking_lot::RwLock;
 use crate::fio::IOManager;
+use super::utils::get_data_file_name;
+use crate::fio::new_io_manager;
+use crate::errors::AppResult;
+use crate::options::io_type::IOType;
+use super::utils::{HINT_FILE_NAME, MERGE_FINISHED_FILE_NAME};
 
 // 数据文件
 pub struct DataFile {
@@ -9,44 +14,48 @@ pub struct DataFile {
     io_manager: Box<dyn IOManager>, // IO 管理接口
 }
 
+impl DataFile {
+    /// 创建或打开一个新的数据文件
+    pub fn new(dir_path: PathBuf, file_id: u32, io_type: IOType) -> AppResult<Self> {
+        // 根据 path 和 id 构造出完整的文件名称
+        let file_name: PathBuf = get_data_file_name(dir_path, file_id);
+        // 初始化 io manager (理解 动态分发, 静态分发)
+        let io_manager: Box<dyn IOManager> = new_io_manager(file_name, io_type);
+
+        Ok(Self {
+            file_id: Arc::new(RwLock::new(file_id)),
+            write_off: Arc::new(RwLock::new(0)),
+            io_manager,
+        })
+    }
+
+    /// 新建或打开 hint 索引文件
+    pub fn new_hint_file(dir_path: PathBuf) -> AppResult<Self> {
+        let file_name: PathBuf = dir_path.join(HINT_FILE_NAME);
+        let io_manager: Box<dyn IOManager> = new_io_manager(file_name, IOType::StandardFIO);
+
+        Ok(Self {
+            file_id: Arc::new(RwLock::new(0)),
+            write_off: Arc::new(RwLock::new(0)),
+            io_manager,
+        })
+    }
+
+    /// 新建或打开标识 merge 完成的文件
+    pub fn new_merge_fin_file(dir_path: PathBuf) -> AppResult<DataFile> {
+        let file_name = dir_path.join(MERGE_FINISHED_FILE_NAME);
+        let io_manager = new_io_manager(file_name, IOType::StandardFIO);
+
+        Ok(DataFile {
+            file_id: Arc::new(RwLock::new(0)),
+            write_off: Arc::new(RwLock::new(0)),
+            io_manager,
+        })
+    }
+}
+
 // impl DataFile {
-//     /// 创建或打开一个新的数据文件
-//     pub fn new(dir_path: PathBuf, file_id: u32, io_type: IOType) -> Result<DataFile> {
-//         // 根据 path 和 id 构造出完整的文件名称
-//         let file_name = get_data_file_name(dir_path, file_id);
-//         // 初始化 io manager
-//         let io_manager = new_io_manager(file_name, io_type);
 
-//         Ok(DataFile {
-//             file_id: Arc::new(RwLock::new(file_id)),
-//             write_off: Arc::new(RwLock::new(0)),
-//             io_manager,
-//         })
-//     }
-
-//     /// 新建或打开 hint 索引文件
-//     pub fn new_hint_file(dir_path: PathBuf) -> Result<DataFile> {
-//         let file_name = dir_path.join(HINT_FILE_NAME);
-//         let io_manager = new_io_manager(file_name, IOType::StandardFIO);
-
-//         Ok(DataFile {
-//             file_id: Arc::new(RwLock::new(0)),
-//             write_off: Arc::new(RwLock::new(0)),
-//             io_manager,
-//         })
-//     }
-
-//     /// 新建或打开标识 merge 完成的文件
-//     pub fn new_merge_fin_file(dir_path: PathBuf) -> Result<DataFile> {
-//         let file_name = dir_path.join(MERGE_FINISHED_FILE_NAME);
-//         let io_manager = new_io_manager(file_name, IOType::StandardFIO);
-
-//         Ok(DataFile {
-//             file_id: Arc::new(RwLock::new(0)),
-//             write_off: Arc::new(RwLock::new(0)),
-//             io_manager,
-//         })
-//     }
 
 //     /// 新建或打开存储事务序列号的文件
 //     pub fn new_seq_no_file(dir_path: PathBuf) -> Result<DataFile> {
