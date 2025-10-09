@@ -1,7 +1,10 @@
 <component name="ProjectDictionaryState">
   <dictionary name="project">
     <words>
+      <w>bptree</w>
       <w>mmap</w>
+      <w>skiplist</w>
+      <w>txnfinished</w>
     </words>
   </dictionary>
 </component>

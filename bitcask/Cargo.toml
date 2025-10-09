@@ -13,3 +13,5 @@ log = { workspace = true }
 memmap2 = { workspace = true }
 fs2 = { workspace = true }
 fs_extra = { workspace = true }
+jammdb = { workspace = true }
+crossbeam-skiplist = "0.1.1"

@@ -5,7 +5,6 @@ use parking_lot::Mutex;
 use super::io_manager::IOManager;
 use crate::errors::{AppErrors, AppResult};
 
-
 /// 线程安全(原子锁) -> memmap2::Mmap
 pub struct MMapIO {
     map: Arc<Mutex<Mmap>>,

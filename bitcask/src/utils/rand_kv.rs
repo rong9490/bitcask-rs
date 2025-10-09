@@ -15,11 +15,8 @@ pub fn get_test_value(i: usize) -> Bytes {
 
 #[test]
 fn test_get_test_key_value() {
-    for i in 0..=10 {
-        assert!(get_test_key(i).len() > 0)
-    }
-
-    for i in 0..=10 {
-        assert!(get_test_value(i).len() > 0)
-    }
+    (0..=20).for_each(|i: usize| -> () {
+        assert!(get_test_key(i).len() > 0);
+        assert!(get_test_key(i).len() > 0);
+    });
 }

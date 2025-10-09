@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::default::Default;
 use super::index_type::IndexType;
 
 #[derive(Clone)]
@@ -19,16 +20,17 @@ pub struct Options {
     pub data_file_merge_ratio: f32,
 }
 
+/// 默认配置(Default::default())
 impl Default for Options {
     fn default() -> Self {
         Self {
             dir_path: std::env::temp_dir().join("bitcask-rs"),
-            data_file_size: 256 * 1024 * 1024, // 256MB,
+            data_file_size: 256 * 1024 * 1024u64, // 256MB,
             sync_writes: false,
-            bytes_per_sync: 0,
+            bytes_per_sync: 0usize,
             index_type: IndexType::BTree,
             mmap_at_startup: true,
-            data_file_merge_ratio: 0.5,
+            data_file_merge_ratio: 0.5f32,
         }
     }
 }

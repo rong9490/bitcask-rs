@@ -10,7 +10,7 @@ pub struct WriteBatchOptions {
 impl Default for WriteBatchOptions {
     fn default() -> Self {
         Self {
-            max_batch_num: 10000,
+            max_batch_num: 10000usize,
             sync_writes: true,
         }
     }

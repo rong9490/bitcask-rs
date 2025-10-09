@@ -1,2 +1,2 @@
 pub mod rand_kv;
-mod file;
+pub mod file;
