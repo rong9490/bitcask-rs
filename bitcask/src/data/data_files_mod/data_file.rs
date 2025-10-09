@@ -1,8 +1,7 @@
 use std::{sync::Arc, path::PathBuf};
 use parking_lot::RwLock;
-use crate::fio::IOManager;
+use crate::fio::io_manager::{IOManager, new_io_manager};
 use super::utils::get_data_file_name;
-use crate::fio::new_io_manager;
 use crate::errors::AppResult;
 use crate::options::io_type::IOType;
 use super::utils::{HINT_FILE_NAME, MERGE_FINISHED_FILE_NAME};

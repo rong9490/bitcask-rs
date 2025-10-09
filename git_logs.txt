@@ -1,0 +1,144 @@
+commit 867131a3f9f868954903eefb6af13cff73fb11d8
+Author: roseduan <roseduan7@163.com>
+Date:   Sat Jun 17 08:53:54 2023 +0800
+
+    第二十五节 兼容 Redis 协议
+
+commit 5f732925ffdbc51de83d1718ca4cac65c7a3bc8e
+Author: roseduan <roseduan7@163.com>
+Date:   Mon Jun 5 14:05:39 2023 +0800
+
+    第二十四节 ZSet结构支持
+
+commit cf3a96ce7e7dd45366b95c247f731a264959c61c
+Author: roseduan <roseduan7@163.com>
+Date:   Sun May 28 17:08:27 2023 +0800
+
+    第二十三节 List结构支持
+
+commit b8d501bc6589a0601f36e2b71a96406375c76641
+Author: roseduan <roseduan7@163.com>
+Date:   Sun May 28 09:37:46 2023 +0800
+
+    第二十二节 Set结构支持
+
+commit 5ac8cc5d8f6bbab89fcbcb2015169011287c2f11
+Author: roseduan <roseduan7@163.com>
+Date:   Wed May 24 22:36:19 2023 +0800
+
+    第二十一节 Hash结构支持
+
+commit 6392001b15f07415521516c0af1ca000775c43a5
+Author: roseduan <roseduan7@163.com>
+Date:   Fri May 19 21:08:54 2023 +0800
+
+    第二十节 String结构支持
+
+commit 38424c67152515b45518c4f1551acea4017f0632
+Author: roseduan <roseduan7@163.com>
+Date:   Wed May 10 08:56:58 2023 +0800
+
+    第十八节 基准测试
+
+commit d434a89e4e5d0c0bdc163f9a979376242dc575bd
+Author: roseduan <roseduan7@163.com>
+Date:   Tue May 2 10:07:54 2023 +0800
+
+    第十七节 HTTP 接口
+
+commit 7479e08684b5fe9f057bd052dd5d3e3e41e9f372
+Author: roseduan <roseduan7@163.com>
+Date:   Sun Apr 30 09:25:47 2023 +0800
+
+    第十六节 数据备份
+
+commit db5c749a0dcaccb25e773ec24dbefa8ca2890773
+Author: roseduan <roseduan7@163.com>
+Date:   Sun Apr 23 13:57:44 2023 +0800
+
+    第十五节 数据 merge 优化
+
+commit 8035c053835deb5dcce94dd12e3802343b31d750
+Author: roseduan <roseduan7@163.com>
+Date:   Sun Apr 16 08:36:23 2023 +0800
+
+    第十四节 文件 IO 优化
+
+commit 9e718292e1646bbfc4e11a7866c685295603d66e
+Author: roseduan <roseduan7@163.com>
+Date:   Sun Apr 9 10:41:01 2023 +0800
+
+    第十三节 内存索引优化
+
+commit 8b2409b41c1c9e62ac563a9080d69fd52c4f69cc
+Author: roseduan <roseduan7@163.com>
+Date:   Sun Apr 2 08:57:11 2023 +0800
+
+    第十二节 merge数据清理
+
+commit 2a8d18c7b3f3ad94931a398eb82ff8b2c4121bbd
+Author: roseduan <roseduan7@163.com>
+Date:   Mon Mar 27 08:27:06 2023 +0800
+
+    第十一节 WriteBatch原子写
+
+commit 02e13523aee230b11c5b4b8d86a1d726acf8b809
+Author: roseduan <roseduan7@163.com>
+Date:   Mon Mar 20 20:56:28 2023 +0800
+
+    第十节 Close、Sync、迭代器
+
+commit fff8efd6660ff99c83fd150da6daa9ce977948dc
+Author: roseduan <roseduan7@163.com>
+Date:   Sun Mar 12 20:57:45 2023 +0800
+
+    第九节 LogRecord 编解码
+
+commit c292f2eba594e04c1adb3db2ff61bf170dd0f438
+Author: roseduan <roseduan7@163.com>
+Date:   Thu Mar 9 23:04:02 2023 +0800
+
+    update README
+
+commit 060b75ceeee6773f0d11aac621074ecd1e4c253e
+Merge: 048771e aa14ed2
+Author: roseduan <roseduan7@163.com>
+Date:   Thu Mar 9 23:00:32 2023 +0800
+
+    Merge branch 'main' of https://github.com/roseduan/bitcask-kv-rs
+
+commit aa14ed21bcccbaea6c56ee4bd94dfb26c5d3f195
+Author: roseduan <roseduan520@gmail.com>
+Date:   Thu Mar 9 11:37:59 2023 +0800
+
+    Initial commit
+
+commit 048771e12220a057c4eed57b98da9fd45059a080
+Author: roseduan <roseduan7@163.com>
+Date:   Wed Mar 8 21:25:38 2023 +0800
+
+    第八节 数据文件逻辑
+
+commit abc6fcf10dfe1941e6186cf629a7265318c2b92c
+Author: roseduan <roseduan7@163.com>
+Date:   Sat Mar 4 16:41:28 2023 +0800
+
+    第七节 数据删除流程
+
+commit 1443c3534e9f3e250901465e80cb92fe85ad1f41
+Author: roseduan <roseduan7@163.com>
+Date:   Fri Mar 3 23:01:51 2023 +0800
+
+    第六节 数据库启动流程
+
+commit 23ebb98e9619e09fb46ae0df155c770e9817413d
+Author: roseduan <roseduan7@163.com>
+Date:   Thu Mar 2 08:28:33 2023 +0800
+
+    第五节 数据读写流程
+
+commit fb8240cc1c7ccb6d0a90369dad7a6c2a924c4763
+Author: roseduan <roseduan7@163.com>
+Date:   Sun Feb 26 19:17:34 2023 +0800
+
+    第四节 内存和磁盘设计

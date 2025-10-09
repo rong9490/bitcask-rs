@@ -2,8 +2,9 @@ use std::{fs::OpenOptions, path::PathBuf, sync::Arc};
 use log::error;
 use memmap2::Mmap;
 use parking_lot::Mutex;
-use super::IOManager;
+use super::io_manager::IOManager;
 use crate::errors::{AppErrors, AppResult};
+
 
 /// 线程安全(原子锁) -> memmap2::Mmap
 pub struct MMapIO {
@@ -66,9 +67,7 @@ impl IOManager for MMapIO {
 #[cfg(test)]
 mod tests {
     use std::fs;
-
     use crate::fio::file_io::FileIO;
-
     use super::*;
 
     #[test]
@@ -85,7 +84,7 @@ mod tests {
 
         let fio_res = FileIO::new(path.clone());
         assert!(fio_res.is_ok());
-        let fio = fio_res.ok().unwrap();
+        let fio: FileIO = fio_res.ok().unwrap();
         fio.write(b"aa").unwrap();
         fio.write(b"bb").unwrap();
         fio.write(b"cc").unwrap();

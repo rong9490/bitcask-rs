@@ -11,3 +11,5 @@ crc32fast = { workspace = true }
 parking_lot = { workspace = true }
 log = { workspace = true }
 memmap2 = { workspace = true }
+fs2 = { workspace = true }
+fs_extra = { workspace = true }

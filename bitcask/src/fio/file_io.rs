@@ -7,7 +7,7 @@ use std::{
 };
 use parking_lot::RwLock;
 use log::error;
-use super::IOManager;
+use super::io_manager::IOManager;
 use crate::errors::{AppErrors, AppResult};
 
 /// FileIO 标准系统文件 IO
@@ -17,7 +17,7 @@ pub struct FileIO {
 
 impl FileIO {
     pub fn new(file_name: PathBuf) -> AppResult<Self> {
-        match OpenOptions::new()
+        return match OpenOptions::new()
             .create(true)
             .read(true)
             .write(true)
@@ -25,13 +25,13 @@ impl FileIO {
             .open(file_name)
         {
             Ok(file) => {
-                return Ok(FileIO {
+                Ok(Self {
                     fd: Arc::new(RwLock::new(file)),
-                });
+                })
             }
             Err(e) => {
                 error!("failed to open data file: {}", e);
-                return Err(AppErrors::FailedToOpenDataFile);
+                Err(AppErrors::FailedToOpenDataFile)
             }
         }
     }
@@ -39,20 +39,21 @@ impl FileIO {
 
 impl IOManager for FileIO {
     fn read(&self, buf: &mut [u8], offset: u64) -> AppResult<usize> {
+        // RwLockReadGuard<RawRwLock, File>
         let read_guard = self.fd.read();
-        match read_guard.read_at(buf, offset) {
-            Ok(n) => return Ok(n),
+        return match read_guard.read_at(buf, offset) {
+            Ok(n) => Ok(n),
             Err(e) => {
                 error!("read from data file err: {}", e);
-                return Err(AppErrors::FailedReadFromDataFile);
+                Err(AppErrors::FailedReadFromDataFile)
             }
         };
     }
 
     fn write(&self, buf: &[u8]) -> AppResult<usize> {
         let mut write_guard = self.fd.write();
-        match write_guard.write(buf) {
-            Ok(n) => return Ok(n),
+        return match write_guard.write(buf) {
+            Ok(n) => Ok(n),
             Err(e) => {
                 error!("write to data file err: {}", e);
                 return Err(AppErrors::FailedWriteToDataFile);
@@ -79,7 +80,6 @@ impl IOManager for FileIO {
 #[cfg(test)]
 mod tests {
     use std::fs;
-
     use super::*;
 
     #[test]
