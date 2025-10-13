@@ -1,12 +1,17 @@
 use std::fs;
 use std::path::PathBuf;
+use crate::errors::{AppResult, AppErrors};
+use crate::data::data_files_mod::data_file::DataFile;
+use crate::data::data_files_mod::utils::DATA_FILE_NAME_SUFFIX;
+use crate::options::io_type::IOType;
+use crate::options::options::Options;
 
 // 从数据目录中加载数据文件
-fn load_data_files(dir_path: PathBuf, use_mmap: bool) -> Result<Vec<DataFile>> {
+fn load_data_files(dir_path: PathBuf, use_mmap: bool) -> AppResult<Vec<DataFile>> {
     // 读取数据目录
     let dir = fs::read_dir(dir_path.clone());
     if dir.is_err() {
-        return Err(Errors::FailedToReadDatabaseDir);
+        return Err(AppErrors::FailedToReadDatabaseDir);
     }
 
     let mut file_ids: Vec<u32> = Vec::new();
@@ -23,7 +28,7 @@ fn load_data_files(dir_path: PathBuf, use_mmap: bool) -> Result<Vec<DataFile>> {
                 let file_id = match split_names[0].parse::<u32>() {
                     Ok(fid) => fid,
                     Err(_) => {
-                        return Err(Errors::DataDirectoryCorrupted);
+                        return Err(AppErrors::DataDirectoryCorrupted);
                     }
                 };
                 file_ids.push(file_id);
@@ -51,18 +56,18 @@ fn load_data_files(dir_path: PathBuf, use_mmap: bool) -> Result<Vec<DataFile>> {
     Ok(data_files)
 }
 
-fn check_options(opts: &Options) -> Option<Errors> {
+fn check_options(opts: &Options) -> Option<AppErrors> {
     let dir_path = opts.dir_path.to_str();
     if dir_path.is_none() || dir_path.unwrap().len() == 0 {
-        return Some(Errors::DirPathIsEmpty);
+        return Some(AppErrors::DirPathIsEmpty);
     }
 
-    if opts.data_file_size <= 0 {
-        return Some(Errors::DataFileSizeTooSmall);
+    if opts.data_file_size <= 0u64 {
+        return Some(AppErrors::DataFileSizeTooSmall);
     }
 
-    if opts.data_file_merge_ratio < 0 as f32 || opts.data_file_merge_ratio > 1 as f32 {
-        return Some(Errors::InvalidMergeRatio);
+    if opts.data_file_merge_ratio < 0f32 || opts.data_file_merge_ratio > 1f32 {
+        return Some(AppErrors::InvalidMergeRatio);
     }
 
     None

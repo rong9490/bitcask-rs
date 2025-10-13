@@ -1,18 +1,21 @@
 pub mod engine;
+pub mod utils;
 
 use std::{fs, path::PathBuf, sync::atomic::Ordering};
+use crate::options::options::Options;
+use crate::errors::{AppResult, AppErrors};
+use crate::db::engine::Engine;
+use crate::data::data_files_mod::data_file::DataFile;
+use crate::data::data_files_mod::utils::{get_data_file_name, DATA_FILE_NAME_SUFFIX, HINT_FILE_NAME, MERGE_FINISHED_FILE_NAME, SEQ_NO_FILE_NAME};
+use crate::data::log_record_mod::log_record::LogRecord;
+
 use log::error;
 use crate::{
     batch::{log_record_key_with_seq, parse_log_record_key, NON_TRANSACTION_SEQ_NO},
     data::{
-        data_file::{
-            get_data_file_name, DataFile, DATA_FILE_NAME_SUFFIX, HINT_FILE_NAME,
-            MERGE_FINISHED_FILE_NAME, SEQ_NO_FILE_NAME,
-        },
-        log_record::{decode_log_record_pos, LogRecord, LogRecordType},
+        log_record::{decode_log_record_pos, LogRecordType},
     },
     db::{Engine, FILE_LOCK_NAME},
-    errors::{Errors, Result},
     options::{IOType, Options},
     util,
 };
@@ -23,7 +26,7 @@ const MERGE_FIN_KEY: &[u8] = "merge.finished".as_bytes();
 
 impl Engine {
     // merge 数据目录，处理无效数据，并生成 hint 索引文件
-    pub fn merge(&self) -> Result<()> {
+    pub fn merge(&self) -> AppResult<()> {
         // 如果是空的数据库则直接返回
         if self.is_empty_engine() {
             return Ok(());
@@ -32,20 +35,20 @@ impl Engine {
         // 如果正在 merge，则直接返回
         let lock = self.merging_lock.try_lock();
         if lock.is_none() {
-            return Err(Errors::MergeInProgress);
+            return Err(AppErrors::MergeInProgress);
         }
 
         // 判断是否达到了 merge 的比例阈值
         let reclaim_size = self.reclaim_size.load(Ordering::SeqCst);
         let total_size = util::file::dir_disk_size(self.options.dir_path.clone());
         if (reclaim_size as f32 / total_size as f32) < self.options.data_file_merge_ratio {
-            return Err(Errors::MergeRatioUnreached);
+            return Err(AppErrors::MergeRatioUnreached);
         }
 
         // 判断磁盘剩余空间是否足够容纳 merge 之后的数据
         let available_size = util::file::available_disk_size();
         if total_size - reclaim_size as u64 >= available_size {
-            return Err(Errors::MeregeNoEnoughSpace);
+            return Err(AppErrors::MeregeNoEnoughSpace);
         }
 
         let merge_path = get_merge_path(self.options.dir_path.clone());
@@ -56,20 +59,20 @@ impl Engine {
         // 创建 merge 数据目录
         if let Err(e) = fs::create_dir_all(merge_path.clone()) {
             error!("failed to create merge path {}", e);
-            return Err(Errors::FailedToCreateDatabaseDir);
+            return Err(AppErrors::FailedToCreateDatabaseDir);
         }
 
         // 获取所有需要进行 merge 的数据文件
         let merge_files = self.rotate_merge_files()?;
 
         // 打开临时用于 merge 的 bitcask 实例
-        let mut merge_db_opts = Options::default();
+        let mut merge_db_opts: Options = Options::default();
         merge_db_opts.dir_path = merge_path.clone();
         merge_db_opts.data_file_size = self.options.data_file_size;
         let merge_db = Engine::open(merge_db_opts)?;
 
         // 打开 hint 文件存储索引
-        let hint_file = DataFile::new_hint_file(merge_path.clone())?;
+        let hint_file: DataFile = DataFile::new_hint_file(merge_path.clone())?;
         // 依次处理每个数据文件，重写有效的数据
         for data_file in merge_files.iter() {
             let mut offset = 0;
@@ -77,7 +80,7 @@ impl Engine {
                 let (mut log_record, size) = match data_file.read_log_record(offset) {
                     Ok(result) => (result.record, result.size),
                     Err(e) => {
-                        if e == Errors::ReadDataFileEOF {
+                        if e == AppErrors::ReadDataFileEOF {
                             break;
                         }
                         return Err(e);
@@ -126,7 +129,7 @@ impl Engine {
         active_file.get_write_off() == 0 && older_files.len() == 0
     }
 
-    fn rotate_merge_files(&self) -> Result<Vec<DataFile>> {
+    fn rotate_merge_files(&self) -> AppResult<Vec<DataFile>> {
         // 取出旧的数据文件的 id
         let mut merge_file_ids = Vec::new();
         let mut older_files = self.older_files.write();
@@ -170,7 +173,7 @@ impl Engine {
     }
 
     /// 从 hint 索引文件中加载索引
-    pub(crate) fn load_index_from_hint_file(&self) -> Result<()> {
+    pub(crate) fn load_index_from_hint_file(&self) -> AppResult<()> {
         let hint_file_name = self.options.dir_path.join(HINT_FILE_NAME);
         // 如果 hint 文件不存在则返回
         if !hint_file_name.is_file() {
@@ -183,7 +186,7 @@ impl Engine {
             let (log_record, size) = match hint_file.read_log_record(offset) {
                 Ok(result) => (result.record, result.size),
                 Err(e) => {
-                    if e == Errors::ReadDataFileEOF {
+                    if e == AppErrors::ReadDataFileEOF {
                         break;
                     }
                     return Err(e);
@@ -209,7 +212,7 @@ fn get_merge_path(dir_path: PathBuf) -> PathBuf {
 }
 
 // 加载 merge 数据目录
-pub(crate) fn load_merge_files(dir_path: PathBuf) -> Result<()> {
+pub(crate) fn load_merge_files(dir_path: PathBuf) -> AppResult<()> {
     let merge_path = get_merge_path(dir_path.clone());
     // 没有发生过 merge 则直接返回
     if !merge_path.is_dir() {
@@ -220,7 +223,7 @@ pub(crate) fn load_merge_files(dir_path: PathBuf) -> Result<()> {
         Ok(dir) => dir,
         Err(e) => {
             error!("failed to read merge dir: {}", e);
-            return Err(Errors::FailedToReadDatabaseDir);
+            return Err(AppErrors::FailedToReadDatabaseDir);
         }
     };
 
@@ -406,7 +409,7 @@ mod tests {
 
         for i in 0..50000 {
             let get_res = engine2.get(get_test_key(i));
-            assert_eq!(Errors::KeyNotFound, get_res.err().unwrap());
+            assert_eq!(AppErrors::KeyNotFound, get_res.err().unwrap());
         }
 
         // 删除测试的文件夹
