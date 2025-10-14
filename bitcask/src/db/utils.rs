@@ -7,7 +7,7 @@ use crate::options::io_type::IOType;
 use crate::options::options::Options;
 
 // 从数据目录中加载数据文件
-fn load_data_files(dir_path: PathBuf, use_mmap: bool) -> AppResult<Vec<DataFile>> {
+pub fn load_data_files(dir_path: PathBuf, use_mmap: bool) -> AppResult<Vec<DataFile>> {
     // 读取数据目录
     let dir = fs::read_dir(dir_path.clone());
     if dir.is_err() {
@@ -56,7 +56,7 @@ fn load_data_files(dir_path: PathBuf, use_mmap: bool) -> AppResult<Vec<DataFile>
     Ok(data_files)
 }
 
-fn check_options(opts: &Options) -> Option<AppErrors> {
+pub fn check_options(opts: &Options) -> Option<AppErrors> {
     let dir_path = opts.dir_path.to_str();
     if dir_path.is_none() || dir_path.unwrap().len() == 0 {
         return Some(AppErrors::DirPathIsEmpty);

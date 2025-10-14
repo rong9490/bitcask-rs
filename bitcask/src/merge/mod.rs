@@ -11,7 +11,7 @@ use crate::data::log_record_mod::log_record::LogRecord;
 
 use log::error;
 use crate::{
-    batch::{log_record_key_with_seq, parse_log_record_key, NON_TRANSACTION_SEQ_NO},
+    batch::{utils, parse_log_record_key, NON_TRANSACTION_SEQ_NO},
     data::{
         log_record::{decode_log_record_pos, LogRecordType},
     },

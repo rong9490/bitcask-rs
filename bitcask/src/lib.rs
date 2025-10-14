@@ -6,3 +6,4 @@ pub mod utils;
 pub mod index;
 pub mod merge;
 pub mod db;
+pub mod batch;
